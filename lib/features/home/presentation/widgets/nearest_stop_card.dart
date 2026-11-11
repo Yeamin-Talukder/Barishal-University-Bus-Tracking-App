@@ -6,18 +6,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/location_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/utils/formatting.dart';
 import '../../../../data/repositories/bus_location_repository.dart';
+import '../../../../data/repositories/transport_network_repository.dart';
 import '../../../../shared/widgets/info_tile.dart';
 import '../../../../shared/widgets/stop_badge.dart';
 import '../../../buses/presentation/arrival_text.dart';
 import '../../../map/application/map_camera_controller.dart';
 import '../../../map/application/map_selection.dart';
 import '../../../map/application/university_map_configuration_provider.dart';
+import '../../../schedule/data/bus_schedule_repository.dart';
 import '../../application/nearest_stop.dart';
+import '../../application/route_departures.dart';
 import '../../application/stop_arrivals.dart';
 
-/// The stop nearest to the passenger, how far it is, the next bus there and
-/// when to set off for it.
+/// The three stops nearest to the passenger: how far each is, the next bus
+/// there and when to set off for it. Three, because the closest stop may
+/// not be on the route the passenger wants.
 ///
 /// Until the passenger has shared their position it is a single row that
 /// offers to find the stop. The position is read on this device and never
@@ -105,7 +110,7 @@ class _NearestStopCardState extends ConsumerState<NearestStopCard> {
     final scheme = theme.colorScheme;
     final semantic = theme.extension<AppSemanticColors>()!;
     final user = ref.watch(userPositionProvider);
-    final nearest = ref.watch(nearestStopProvider);
+    final nearby = ref.watch(nearestStopsProvider);
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: scheme.onSurfaceVariant,
     );
@@ -116,7 +121,7 @@ class _NearestStopCardState extends ConsumerState<NearestStopCard> {
     });
 
     final Widget child;
-    if (nearest == null) {
+    if (nearby.isEmpty) {
       final message =
           _problem ??
           (user != null
@@ -169,107 +174,66 @@ class _NearestStopCardState extends ConsumerState<NearestStopCard> {
         ],
       );
     } else {
-      final arrivals = ref.watch(stopArrivalsProvider(nearest.stop.id));
-      final nextBus = arrivals.firstOrNull;
-      final walk = nearest.walkingTime;
-      final walkMinutes = (walk.inSeconds / 60).round().clamp(1, 999);
       final age = ref.watch(clockProvider)().difference(user!.at);
       child = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const StopBadge(size: 44),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Stop nearest to you', style: muted),
-                    Text(
-                      nearest.stop.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Icon(
-                Icons.directions_walk_rounded,
-                size: 17,
-                color: semantic.info,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'About ${distanceText(nearest.distanceMeters)} away in a '
-                  'straight line, roughly $walkMinutes min on foot',
-                  style: theme.textTheme.bodySmall,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.directions_bus_rounded,
-                size: 17,
-                color: nextBus == null ? semantic.muted : semantic.success,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: nextBus == null
-                    ? Text(
-                        'No bus can be estimated for this stop right now.',
-                        style: muted,
-                      )
-                    : Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text:
-                                  'Bus ${nextBus.bus.bus.number}: '
-                                  '${arrivalText(nextBus.estimate)}. ',
-                            ),
-                            TextSpan(
-                              text: leaveAdviceText(
-                                leaveAdvice(
-                                  walk: walk,
-                                  busIn: nextBus.estimate.travelTime,
-                                ),
-                              ),
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: scheme.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        style: theme.textTheme.bodySmall,
-                      ),
-              ),
-            ],
-          ),
-          // A position that could not be refreshed is said to be old.
-          if (age > const Duration(minutes: 2))
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                'Your position is ${age.inMinutes} min old.',
-                style: muted,
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xs,
             ),
+            child: Row(
+              children: [
+                Icon(Icons.near_me_rounded, size: 18, color: semantic.info),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    nearby.length == 1
+                        ? 'Stop nearest to you'
+                        : 'Stops nearest to you',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          for (final (index, near) in nearby.indexed) ...[
+            if (index > 0)
+              const Divider(
+                height: 1,
+                indent: AppSpacing.md,
+                endIndent: AppSpacing.md,
+              ),
+            _NearStopRow(
+              near: near,
+              // The closest one stands out.
+              isNearest: index == 0,
+              onTap: () => ref
+                  .read(mapSelectionProvider.notifier)
+                  .selectStop(near.stop.id),
+            ),
+          ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xs,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            child: Text(
+              // A position that could not be refreshed is said to be old.
+              age > const Duration(minutes: 2)
+                  ? 'Distances are in a straight line. Your position is '
+                        '${age.inMinutes} min old.'
+                  : 'Distances are in a straight line.',
+              style: muted,
+            ),
+          ),
         ],
       );
     }
@@ -281,13 +245,173 @@ class _NearestStopCardState extends ConsumerState<NearestStopCard> {
         AppSpacing.lg,
         0,
       ),
-      child: SoftCard(
-        onTap: nearest == null
-            ? null
-            : () => ref
-                  .read(mapSelectionProvider.notifier)
-                  .selectStop(nearest.stop.id),
-        child: child,
+      child: nearby.isEmpty
+          ? SoftCard(child: child)
+          : SoftCard(padding: EdgeInsets.zero, child: child),
+    );
+  }
+}
+
+/// One stop near the passenger: its name, the walk to it, and the next
+/// bus there. Tapping it opens the stop.
+class _NearStopRow extends ConsumerWidget {
+  const _NearStopRow({
+    required this.near,
+    required this.isNearest,
+    required this.onTap,
+  });
+
+  final NearestStop near;
+  final bool isNearest;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final semantic = theme.extension<AppSemanticColors>()!;
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+    );
+    final now = ref.watch(clockProvider)();
+    final walk = near.walkingTime;
+    final walkMinutes = (walk.inSeconds / 60).round().clamp(1, 999);
+    final nextBus = ref.watch(stopArrivalsProvider(near.stop.id)).firstOrNull;
+    // With no live bus to estimate, the timetable still says which bus
+    // comes next and when it sets off.
+    final schedule = ref.watch(busScheduleProvider).value;
+    final network = ref.watch(transportNetworkProvider).value;
+    final scheduled = nextBus != null || schedule == null || network == null
+        ? null
+        : upcomingDeparturesAt(
+            schedule: schedule,
+            network: network,
+            stop: near.stop,
+            now: now,
+            count: 1,
+          ).firstOrNull;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: 10,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            StopBadge(size: isNearest ? 44 : 36),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    near.stop.name,
+                    style:
+                        (isNearest
+                                ? theme.textTheme.titleMedium
+                                : theme.textTheme.titleSmall)
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.directions_walk_rounded,
+                        size: 15,
+                        color: semantic.info,
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          '${distanceText(near.distanceMeters)} away · '
+                          'about $walkMinutes min on foot',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.directions_bus_rounded,
+                        size: 15,
+                        color: nextBus != null
+                            ? semantic.success
+                            : scheduled != null
+                            ? semantic.info
+                            : semantic.muted,
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: nextBus != null
+                            ? Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text:
+                                          'Bus ${nextBus.bus.bus.number}: '
+                                          '${arrivalText(nextBus.estimate)}. ',
+                                    ),
+                                    TextSpan(
+                                      text: leaveAdviceText(
+                                        leaveAdvice(
+                                          walk: walk,
+                                          busIn: nextBus.estimate.travelTime,
+                                        ),
+                                      ),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: scheme.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                style: theme.textTheme.bodySmall,
+                              )
+                            : scheduled != null
+                            ? Text.rich(
+                                TextSpan(
+                                  children: [
+                                    const TextSpan(text: 'Timetable: '),
+                                    TextSpan(
+                                      text: scheduled.buses,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text:
+                                          ' · ${scheduled.routeName} to '
+                                          '${scheduled.toName}, leaves '
+                                          '${scheduled.fromName} at '
+                                          '${formatClockTime(scheduled.at.hour * 60 + scheduled.at.minute)} '
+                                          '(${departsInText(scheduled.at, now)}).',
+                                    ),
+                                  ],
+                                ),
+                                style: theme.textTheme.bodySmall,
+                              )
+                            : Text(
+                                'No bus can be estimated for this stop right '
+                                'now.',
+                                style: muted,
+                              ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+          ],
+        ),
       ),
     );
   }

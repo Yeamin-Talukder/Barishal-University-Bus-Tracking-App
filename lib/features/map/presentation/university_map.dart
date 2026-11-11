@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' show Point;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -688,7 +689,12 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
               BusTrackingStatus.live,
     );
     final stopPicked = _focusedStopId != null && _stopFocusAttached;
-    if (!anyLive && !_busMotion.isMoving(DateTime.now()) && !stopPicked) {
+    // A picked bus is marked by a ring that moves, live or not.
+    final busPicked = ref.read(mapSelectionProvider).busId != null;
+    if (!anyLive &&
+        !_busMotion.isMoving(DateTime.now()) &&
+        !stopPicked &&
+        !busPicked) {
       _busTicker.stop();
       _lastBusFrame = Duration.zero;
     }
@@ -789,11 +795,35 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
   /// followed that puts following on hold, so the map does not snap back
   /// under their hand.
   void _onCameraMoveStarted(CameraMoveReason reason) {
-    if (reason != CameraMoveReason.gesture || !_isFollowing) return;
+    if (reason == CameraMoveReason.gesture) _pauseFollowing();
+  }
+
+  /// Puts following on hold, if a bus is being followed.
+  void _pauseFollowing() {
+    if (!_isFollowing) return;
     if (!ref.read(followPausedProvider)) {
       ref.read(followPausedProvider.notifier).pause();
     }
   }
+
+  /// Where a finger or the mouse went down on the map, until it lifts.
+  Offset? _pointerDownAt;
+
+  /// A drag across the map while a bus is followed puts following on hold.
+  ///
+  /// The map reports a move made by hand itself, but not on the web while
+  /// the camera is being moved many times a second to keep up with a bus:
+  /// each of those moves cancels the drag before the map counts it as one.
+  /// So the drag is watched for here as well. A tap stays a tap.
+  void _onPointerMove(PointerMoveEvent event) {
+    final from = _pointerDownAt;
+    if (from == null || (event.position - from).distance < _dragSlop) return;
+    _pointerDownAt = null;
+    _pauseFollowing();
+  }
+
+  /// How far a pointer must travel before it is a drag and not a tap.
+  static const double _dragSlop = 12;
 
   /// The reported position of the bus with [busId], if it has one.
   GeoPoint? _positionOfBus(String? busId) {
@@ -896,9 +926,25 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
   }
 
   /// A tap on the map selects the stop or route under the finger.
+  /// Whether the list of a group's buses is open, and when it last closed.
+  ///
+  /// On the web the map is an HTML element under the app's own drawing, so
+  /// the tap that picks a bus from the list, or closes it, also reaches
+  /// the map. Left alone it would land on the group's marker again and
+  /// open the list a second time. Taps are therefore ignored while the
+  /// list is open and for a moment after it closes.
+  bool _pickingFromGroup = false;
+  DateTime? _groupListClosedAt;
+  static const Duration _groupListEcho = Duration(milliseconds: 400);
+
   Future<void> _onMapTapped(Point<double> point, LatLng coordinates) async {
     final map = _map;
-    if (map == null || !_layersAttached) return;
+    if (map == null || !_layersAttached || _pickingFromGroup) return;
+    final closedAt = _groupListClosedAt;
+    if (closedAt != null &&
+        DateTime.now().difference(closedAt) < _groupListEcho) {
+      return;
+    }
     try {
       // A finger is not a pin: a bus or a stop is picked when the tap lands
       // near it, and the nearest one wins.
@@ -918,7 +964,17 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
             ? null
             : BusMapLayer.busIdsOfGroup(groupId);
         if (groupBusIds != null && mounted) {
-          final picked = await showBusGroupSheet(context, groupBusIds);
+          // The same tap, reported a second time while the first was
+          // being looked up.
+          if (_pickingFromGroup) return;
+          _pickingFromGroup = true;
+          final String? picked;
+          try {
+            picked = await showBusGroupSheet(context, groupBusIds);
+          } finally {
+            _pickingFromGroup = false;
+            _groupListClosedAt = DateTime.now();
+          }
           if (picked != null && mounted) {
             ref.read(mapSelectionProvider.notifier).selectBus(picked);
           }
@@ -1132,37 +1188,47 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     }
 
     final bounds = config.coverageBounds;
-    return MapLibreMap(
-      styleString: initialStyle,
-      initialCameraPosition: CameraPosition(
-        target: LatLng(config.centerLatitude, config.centerLongitude),
-        zoom: config.initialZoom,
-      ),
-      minMaxZoomPreference: MinMaxZoomPreference(
-        config.minZoom,
-        config.maxZoom,
-      ),
-      cameraTargetBounds: CameraTargetBounds(
-        LatLngBounds(
-          southwest: LatLng(bounds.south, bounds.west),
-          northeast: LatLng(bounds.north, bounds.east),
+    return Listener(
+      onPointerDown: (event) => _pointerDownAt = event.position,
+      onPointerMove: _onPointerMove,
+      onPointerUp: (_) => _pointerDownAt = null,
+      onPointerCancel: (_) => _pointerDownAt = null,
+      // Zooming with the mouse wheel is moving the map by hand too.
+      onPointerSignal: (event) {
+        if (event is PointerScrollEvent) _pauseFollowing();
+      },
+      child: MapLibreMap(
+        styleString: initialStyle,
+        initialCameraPosition: CameraPosition(
+          target: LatLng(config.centerLatitude, config.centerLongitude),
+          zoom: config.initialZoom,
         ),
+        minMaxZoomPreference: MinMaxZoomPreference(
+          config.minZoom,
+          config.maxZoom,
+        ),
+        cameraTargetBounds: CameraTargetBounds(
+          LatLngBounds(
+            southwest: LatLng(bounds.south, bounds.west),
+            northeast: LatLng(bounds.north, bounds.east),
+          ),
+        ),
+        myLocationEnabled: ref.watch(userLocationVisibleProvider),
+        // Attribution is shown by the app's own label so it stays visible
+        // above the bottom sheet.
+        attributionEnabled: false,
+        // The zoom is needed to keep each bus on its own route line.
+        trackCameraPosition: true,
+        // The compass sits below the route chips, which float across the top
+        // of the map. The web map cannot move its compass, so it has none.
+        compassEnabled: !kIsWeb,
+        compassViewPosition: CompassViewPosition.topRight,
+        compassViewMargins: Point(16, MediaQuery.paddingOf(context).top + 76),
+        onMapCreated: _onMapCreated,
+        onStyleLoadedCallback: _onStyleLoaded,
+        onMapClick: _onMapTapped,
+        onCameraMoveStarted: _onCameraMoveStarted,
       ),
-      myLocationEnabled: ref.watch(userLocationVisibleProvider),
-      // Attribution is shown by the app's own label so it stays visible
-      // above the bottom sheet.
-      attributionEnabled: false,
-      // The zoom is needed to keep each bus on its own route line.
-      trackCameraPosition: true,
-      // The compass sits below the route chips, which float across the top
-      // of the map. The web map cannot move its compass, so it has none.
-      compassEnabled: !kIsWeb,
-      compassViewPosition: CompassViewPosition.topRight,
-      compassViewMargins: Point(16, MediaQuery.paddingOf(context).top + 76),
-      onMapCreated: _onMapCreated,
-      onStyleLoadedCallback: _onStyleLoaded,
-      onMapClick: _onMapTapped,
-      onCameraMoveStarted: _onCameraMoveStarted,
     );
   }
 }

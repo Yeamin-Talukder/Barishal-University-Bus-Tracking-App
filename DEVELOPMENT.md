@@ -1142,6 +1142,81 @@ and a red route running under the pin's tip.
   not bundled into the app.
 - The web build still has Flutter's default icons (not requested).
 
+## Map features and bus names (12 November 2026)
+
+What the map page gained, and where the buses' names are now shown.
+
+- **Which bus to get on (the timetable's names).** Passengers know the
+  buses by name (Chitra, Sugandha, BRTC-05) and the timetable says which of
+  them runs which route at which time. That was only on the Schedule page.
+  Now:
+  - **A route's page:** "Which bus goes this way" lists the next three
+    departures in the direction shown, each with the buses' names in the
+    largest text, the time, "in 12 min", and where it sets off. Swapping
+    the direction swaps the list.
+  - **A stop's page:** "Which bus to take here" gives the next departure of
+    every route and direction that picks up there (a direction that ends at
+    the stop is left out), with the route's colour, where it goes, and
+    whether it sets off from this stop or comes from elsewhere.
+  - **Nearest stops:** with no live bus to estimate, each stop says
+    "Timetable: BRTC-06 · Route 01 to University (1st Gate), leaves
+    Barishal Club at 7:30 AM (in 6 h 20 min)".
+  - **Predicted buses** (list, stop page and map marker) are titled with
+    the names instead of "Route 01"; a list too long to sit under a marker
+    ("Lota/Kirtankhola/Payra/…") gives way to the route there.
+  - Names are shown exactly as the timetable writes them. The same
+    departure listed by two passenger groups is shown once with both sets
+    of buses. After the last bus of the day it is tomorrow's first, marked
+    "tomorrow" (the timetable does not say on which days it applies). A
+    departure stays listed two minutes past its time. All of it is marked
+    "From the timetable, not a live position."
+  - Code: `home/application/route_departures.dart`,
+    `home/presentation/widgets/timetable_buses.dart`,
+    `PredictedBusLayer.markerName`.
+- **Bus markers.** A ring in the route's colour round each badge. Buses
+  closer than 44 pixels are drawn as one marker with a count; tapping it
+  lists them ("3 buses here") to pick from, and zooming in separates them.
+  A bus that is not live is fainter and says "seen 4 min ago". The picked
+  bus is marked by an outline that breathes: there is no filled circle
+  behind it any more, only the animation.
+- **Route lines.** Each route has its own pattern down the middle (plain,
+  dashes, dots) so they can be told apart without colour. A picked route
+  shows arrows the way it is listed and its name along the line. For a
+  picked bus the part already driven and the part ahead are drawn apart.
+- **Following a bus.** The camera travels with the bus, leaning forward
+  with more road ahead of it than behind; a switch keeps the map north-up
+  instead (remembered). A card says which bus, its next stop and when.
+  Moving the map by hand puts following on hold and offers "Re-centre",
+  which keeps the passenger's zoom.
+- **Stops nearest to you.** The three nearest stops within 3 km, nearest
+  first: distance in a straight line, a rough walking time, the next bus
+  (live estimate with "Leave in about 6 min", else the timetable's bus),
+  each opening its stop. The position stays on the device and is read
+  again every 30 s while the card shows.
+- **Arrival alert.** On a bus heading for a stop: "alert me when it is N
+  minutes away". It works while the app is open; it cannot ring when the
+  app is closed.
+- **Wide screens.** Tablets, desktop windows and phones on their side get
+  a navigation rail and the sheet as a panel beside the map.
+- **Calmer base map.** Side streets, small places and shop names are drawn
+  quieter (`tools/map/build_styles.py`, styles regenerated) so the routes
+  and buses stand out. A chip on the map says how many buses are live.
+- **Faults found on the web build and fixed.**
+  - Dragging the map while following did not pause following: moving the
+    camera many times a second cancelled the drag before the map counted
+    it. The drag is now also watched for by the app itself.
+  - Picking a bus from the "buses here" list left a second list open: the
+    tap also reached the map under the list and landed on the group's
+    label. The list is shielded from the map and that echo is ignored.
+- **Checked:** 597 tests pass (11 new for the bus names, others for the
+  markers, routes, following, nearest stops, alert and wide layout);
+  analyze clean. Seen working in the web build at phone and wide sizes
+  with the pretend buses: groups and the list, the picked bus's ring,
+  following, pause and re-centre, the route and stop bus lists, the three
+  nearest stops (with a pretend position).
+- **Not checked:** on an Android phone. The pause-on-drag and the list fix
+  matter on the web; Android reports a hand-made move itself.
+
 ## Home-screen widget (12 November 2026)
 
 "Next bus" on the Android home screen, without opening the app.
@@ -1296,7 +1371,7 @@ layout was repaired.
 | Check | Result |
 |---|---|
 | `flutter analyze` | No issues |
-| `flutter test` | 530 tests pass |
+| `flutter test` | 597 tests pass |
 | Live tracking, passenger side | Checked in the web preview against the local emulators with a test position: the bus list showed "1 bus live", and a green marker with the bus number appeared on the map and moved when the position changed |
 | Driver mode | App tests and rule tests only. **Not run on a phone: no real trip, no background check, no real GPS** |
 | Tracking rules on the live project | Deployed. Without signing in, positions and trips can be read and nothing can be written; `admins` and `busDrivers` cannot be read |

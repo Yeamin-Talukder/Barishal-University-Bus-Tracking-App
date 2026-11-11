@@ -255,6 +255,8 @@ class BusMapLayer {
   }) {
     // The ring grows and fades; easing out makes it breathe, not blink.
     final eased = 1 - math.pow(1 - pulse.clamp(0.0, 1.0), 2).toDouble();
+    // The picked bus's ring swells and settles once in each pulse.
+    final swell = math.sin(pulse.clamp(0.0, 1.0) * math.pi);
     return {
       'type': 'FeatureCollection',
       'features': [
@@ -269,6 +271,12 @@ class BusMapLayer {
                 'badge': badgeName(statusOf(tracked)),
                 'pointer': pointerName(statusOf(tracked)),
                 'selected': tracked.bus.id == selectedBusId,
+                // The picked bus is shown by a moving ring alone: there is
+                // no filled circle standing behind it.
+                if (tracked.bus.id == selectedBusId) ...{
+                  'selectRadius': 34 + 7 * swell,
+                  'selectOpacity': 0.95 - 0.45 * swell,
+                },
                 'opacity': opacityOf(statusOf(tracked)),
                 'routeColor': ?routeColorOf?.call(tracked),
                 if (statusOf(tracked) != BusTrackingStatus.live &&
@@ -363,22 +371,20 @@ class BusMapLayer {
       filter: const ['has', 'pulseRadius'],
       enableInteraction: false,
     );
-    // A steady ring around the bus the passenger picked.
+    // The ring around the bus the passenger picked: an outline that
+    // breathes, with nothing filled in behind the bus.
     await map.addCircleLayer(
       source,
       selectedLayer,
       CircleLayerProperties(
-        circleRadius: 40,
+        circleRadius: const ['get', 'selectRadius'],
         circleColor: colors.selection,
-        circleOpacity: 0.16,
+        circleOpacity: 0,
         circleStrokeColor: colors.selection,
         circleStrokeWidth: 2.5,
+        circleStrokeOpacity: const ['get', 'selectOpacity'],
       ),
-      filter: const [
-        '==',
-        ['get', 'selected'],
-        true,
-      ],
+      filter: const ['has', 'selectRadius'],
       enableInteraction: false,
     );
     await map.addSymbolLayer(

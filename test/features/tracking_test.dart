@@ -861,5 +861,38 @@ void main() {
         isTrue,
       );
     });
+
+    test('the selected bus has a ring that moves, and only it has one', () {
+      Map<String, dynamic> properties(double pulse, {String? selected}) =>
+          ((BusMapLayer.geoJson(
+                            [TrackedBus(bus: _chitra, location: here)],
+                            statusOf: (_) => BusTrackingStatus.offline,
+                            headingOf: (_) => null,
+                            colors: colors,
+                            selectedBusId: selected,
+                            pulse: pulse,
+                          )['features']
+                          as List)
+                      .single
+                  as Map)['properties']
+              as Map<String, dynamic>;
+
+      expect(properties(0.5).containsKey('selectRadius'), isFalse);
+      // It swells and settles within one pulse, on a bus of any status.
+      final rest = properties(0, selected: 'chitra');
+      final swollen = properties(0.5, selected: 'chitra');
+      expect(
+        swollen['selectRadius'],
+        greaterThan(rest['selectRadius'] as double),
+      );
+      expect(
+        swollen['selectOpacity'],
+        lessThan(rest['selectOpacity'] as double),
+      );
+      expect(
+        properties(1, selected: 'chitra')['selectRadius'],
+        closeTo(rest['selectRadius'] as double, 0.001),
+      );
+    });
   });
 }

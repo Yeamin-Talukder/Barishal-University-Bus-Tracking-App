@@ -101,6 +101,18 @@ class PredictedBusLayer {
     'features': <Object>[],
   };
 
+  /// The name under a predicted bus. The buses the timetable names for
+  /// the departure, when they fit under a marker: passengers know a bus by
+  /// its name. A long list ("one of these six") gives way to the route.
+  static String markerName(PredictedBus bus) {
+    final named = bus.vehicles?.trim() ?? '';
+    return bus.basis == PredictionBasis.timetable &&
+            named.isNotEmpty &&
+            named.length <= 24
+        ? named
+        : bus.label;
+  }
+
   /// The predicted buses as GeoJSON. [positionOf] lets the caller set a
   /// bus to the side of the road with its route's line.
   static Map<String, dynamic> geoJson(
@@ -117,7 +129,7 @@ class PredictedBusLayer {
               'id': bus.id,
               'routeId': bus.routeId,
               // "~" for "about": this is not where the bus was reported.
-              'label': '~ ${bus.label}',
+              'label': '~ ${markerName(bus)}',
             },
             'geometry': {
               'type': 'Point',

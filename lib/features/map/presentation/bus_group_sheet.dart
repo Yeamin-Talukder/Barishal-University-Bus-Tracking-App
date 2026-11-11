@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/repositories/bus_location_repository.dart';
@@ -13,7 +14,10 @@ Future<String?> showBusGroupSheet(BuildContext context, List<String> busIds) {
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) => BusGroupList(busIds: busIds),
+    // On web the map is an HTML element under the Flutter canvas: without
+    // this it would also react to taps and drags on the list.
+    builder: (context) =>
+        PointerInterceptor(child: BusGroupList(busIds: busIds)),
   );
 }
 

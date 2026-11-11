@@ -143,6 +143,10 @@ class _PredictedBusCard extends StatelessWidget {
     );
     final nextStop = bus.nextStopName;
     final nextAt = bus.nextStopAt;
+    // Whether the timetable names the buses of this departure.
+    final named =
+        bus.basis == PredictionBasis.timetable &&
+        (bus.vehicles?.isNotEmpty ?? false);
 
     return SoftCard(
       onTap: onTap,
@@ -158,13 +162,18 @@ class _PredictedBusCard extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(
+                      // The buses' names come first: that is what a
+                      // passenger looks for on the bus itself.
                       child: Text(
                         bus.basis == PredictionBasis.lastSeen
                             ? 'Bus ${bus.label}'
+                            : named
+                            ? bus.vehicles!
                             : bus.label,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -207,9 +216,8 @@ class _PredictedBusCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 2),
+                if (named) Text(bus.routeName, style: muted),
                 Text(predictionBasisText(bus, now), style: muted),
-                if (bus.vehicles != null && bus.vehicles!.isNotEmpty)
-                  Text('Named in the timetable: ${bus.vehicles}', style: muted),
                 if (nextStop != null && nextAt != null) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
@@ -297,17 +305,27 @@ class PredictedArrivalsSection extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Which bus it is: its own number when it
+                              // was seen, else the names in the timetable.
                               Text(
-                                arrival.label == null
-                                    ? arrival.routeName
-                                    : 'Bus ${arrival.label} · '
-                                          '${arrival.routeName}',
+                                arrival.label != null
+                                    ? 'Bus ${arrival.label}'
+                                    : (arrival.vehicles?.isNotEmpty ?? false)
+                                    ? arrival.vehicles!
+                                    : arrival.routeName,
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               Text(
-                                '${arrival.fromName} → ${arrival.toName}',
+                                arrival.label == null &&
+                                        !(arrival.vehicles?.isNotEmpty ?? false)
+                                    ? '${arrival.fromName} → ${arrival.toName}'
+                                    : '${arrival.routeName} · '
+                                          '${arrival.fromName} → '
+                                          '${arrival.toName}',
                                 style: muted,
                               ),
                               Text(

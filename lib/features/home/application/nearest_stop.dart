@@ -78,6 +78,32 @@ NearestStop? nearestStopTo(GeoPoint from, List<BusStop> stops) {
   return nearest;
 }
 
+/// How many stops are offered to a passenger as "near": the closest may
+/// not be on the route they want.
+const int nearestStopsShown = 3;
+
+/// The [count] stops of [stops] nearest to [from] in a straight line,
+/// nearest first.
+List<NearestStop> nearestStopsTo(
+  GeoPoint from,
+  List<BusStop> stops, {
+  int count = nearestStopsShown,
+}) {
+  final byDistance = [
+    for (final stop in stops)
+      NearestStop(
+        stop: stop,
+        distanceMeters: haversineDistanceMeters(
+          from.latitude,
+          from.longitude,
+          stop.position.latitude,
+          stop.position.longitude,
+        ),
+      ),
+  ]..sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
+  return byDistance.take(count).toList();
+}
+
 /// What to tell a passenger who wants to catch a bus at a stop.
 enum LeaveAdvice {
   /// There is time to spare before setting off.
@@ -128,15 +154,21 @@ String distanceText(double meters) {
   return '${(meters / 1000).toStringAsFixed(1)} km';
 }
 
-/// The stop nearest to the passenger, when their position is known and a
-/// stop is within [nearestStopWithinMeters]. Null otherwise.
-final nearestStopProvider = Provider<NearestStop?>((ref) {
+/// The stops nearest to the passenger, nearest first: up to
+/// [nearestStopsShown] of them, each within [nearestStopWithinMeters].
+/// Empty until their position is known.
+final nearestStopsProvider = Provider<List<NearestStop>>((ref) {
   final user = ref.watch(userPositionProvider);
   final network = ref.watch(transportNetworkProvider).value;
-  if (user == null || network == null) return null;
-  final nearest = nearestStopTo(user.position, network.stops);
-  if (nearest == null || nearest.distanceMeters > nearestStopWithinMeters) {
-    return null;
-  }
-  return nearest;
+  if (user == null || network == null) return const [];
+  return [
+    for (final near in nearestStopsTo(user.position, network.stops))
+      if (near.distanceMeters <= nearestStopWithinMeters) near,
+  ];
 });
+
+/// The stop nearest to the passenger, when their position is known and a
+/// stop is within [nearestStopWithinMeters]. Null otherwise.
+final nearestStopProvider = Provider<NearestStop?>(
+  (ref) => ref.watch(nearestStopsProvider).firstOrNull,
+);

@@ -26,6 +26,7 @@ import '../../../prediction/presentation/predicted_buses_section.dart';
 import '../../application/stop_arrivals.dart';
 import 'nearest_stop_card.dart';
 import 'selection_details.dart';
+import 'timetable_buses.dart';
 
 /// The draggable sheet over the map.
 ///
@@ -177,6 +178,10 @@ class _SheetContent extends ConsumerWidget {
         // The arrows on the map point the way the stops are listed.
         reversed: ref.watch(routeShownReversedProvider),
         onSwapDirection: ref.read(routeShownReversedProvider.notifier).toggle,
+        timetableBuses: TimetableBuses.forRoute(
+          routeId: route.id,
+          reversed: ref.watch(routeShownReversedProvider),
+        ),
       );
     } else if (network != null && stop != null) {
       final routesHere = network.routesServing(stop.id);
@@ -199,6 +204,7 @@ class _SheetContent extends ConsumerWidget {
           stopId: stop.id,
           stopName: stop.name,
         ),
+        timetableBuses: TimetableBuses.forStop(stopId: stop.id),
         predictedArrivals: PredictedArrivalsSection(stopId: stop.id),
         onBusSelected: (tracked) => select.selectBus(tracked.bus.id),
       );

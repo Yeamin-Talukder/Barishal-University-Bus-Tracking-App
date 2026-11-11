@@ -476,6 +476,22 @@ void main() {
       expect(nearestStopTo(const GeoPoint(22, 90), const []), isNull);
     });
 
+    test('the three nearest are given, nearest first', () {
+      final near = nearestStopsTo(const GeoPoint(22.0105, 90), _network.stops);
+      expect(near.map((n) => n.stop.id), ['m', 'n', 's']);
+      expect(near[1].distanceMeters, greaterThan(near[0].distanceMeters));
+      // No more than asked for, and no more than there are.
+      expect(
+        nearestStopsTo(
+          const GeoPoint(22.0105, 90),
+          _network.stops,
+          count: 2,
+        ).map((n) => n.stop.id),
+        ['m', 'n'],
+      );
+      expect(nearestStopsTo(const GeoPoint(22, 90), const []), isEmpty);
+    });
+
     test('the walk is longer than the straight line', () {
       // 650 m in a straight line: about eleven minutes at an easy pace.
       expect(walkingTimeFor(650).inSeconds, 650);
@@ -518,13 +534,29 @@ void main() {
           .set(const GeoPoint(22.0105, 90), _now);
       await tester.pumpAndSettle();
 
+      // The three nearest stops are listed, nearest first.
+      expect(find.text('Stops nearest to you'), findsOneWidget);
       expect(inSheet(find.text('Middle')), findsOneWidget);
+      expect(inSheet(find.text('North End')), findsOneWidget);
+      expect(inSheet(find.text('South End')), findsOneWidget);
       expect(
-        find.textContaining('About 60 m away in a straight line'),
+        tester.getTopLeft(inSheet(find.text('Middle'))).dy,
+        lessThan(tester.getTopLeft(inSheet(find.text('North End'))).dy),
+      );
+      expect(
+        tester.getTopLeft(inSheet(find.text('North End'))).dy,
+        lessThan(tester.getTopLeft(inSheet(find.text('South End'))).dy),
+      );
+      expect(
+        find.textContaining('60 m away · about 1 min on foot'),
         findsOneWidget,
       );
       expect(find.textContaining('Bus A1: About 3 min'), findsOneWidget);
-      expect(find.textContaining('Leave in about'), findsOneWidget);
+      expect(find.textContaining('Leave in about'), findsWidgets);
+      expect(
+        find.textContaining('Distances are in a straight line.'),
+        findsOneWidget,
+      );
 
       // Tapping the card opens the stop. It is below the fold of the
       // closed sheet, so bring it up first.
@@ -535,6 +567,18 @@ void main() {
       expect(
         container.read(mapSelectionProvider),
         const MapSelection(stopId: 'm'),
+      );
+
+      // Any of the three opens its own stop.
+      container.read(mapSelectionProvider.notifier).clear();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(inSheet(find.text('North End')));
+      await tester.pumpAndSettle();
+      await tester.tap(inSheet(find.text('North End')));
+      await tester.pumpAndSettle();
+      expect(
+        container.read(mapSelectionProvider),
+        const MapSelection(stopId: 'n'),
       );
     });
   });

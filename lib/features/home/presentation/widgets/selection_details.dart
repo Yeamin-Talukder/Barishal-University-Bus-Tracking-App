@@ -29,6 +29,7 @@ class RouteDetails extends StatelessWidget {
     required this.onClose,
     this.reversed = false,
     this.onSwapDirection,
+    this.timetableBuses,
     super.key,
   });
 
@@ -45,6 +46,10 @@ class RouteDetails extends StatelessWidget {
 
   /// Shows the route the other way round. Without it there is no switch.
   final VoidCallback? onSwapDirection;
+
+  /// Which named buses run the next departures this way, shown above the
+  /// stops: it is what tells a passenger which bus to get on.
+  final Widget? timetableBuses;
 
   @override
   Widget build(BuildContext context) {
@@ -156,6 +161,7 @@ class RouteDetails extends StatelessWidget {
               ),
             ),
           ),
+        ?timetableBuses,
         SectionTitle(stops.isEmpty ? 'Stops' : 'Stops (${stops.length})'),
         if (stops.isEmpty)
           Padding(
@@ -450,8 +456,12 @@ class StopDetails extends StatelessWidget {
     this.onBusSelected,
     this.predictedArrivals,
     this.arrivalActionBuilder,
+    this.timetableBuses,
     super.key,
   });
+
+  /// Which named buses run the next departures that pick up here.
+  final Widget? timetableBuses;
 
   /// Builds something to do about a bus on its way here, such as a bell
   /// for setting an alert.
@@ -609,6 +619,7 @@ class StopDetails extends StatelessWidget {
                 ),
               ),
         ],
+        ?timetableBuses,
         ?predictedArrivals,
         const SectionTitle('Routes at this stop'),
         if (routes.isEmpty)

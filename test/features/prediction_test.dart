@@ -689,7 +689,8 @@ void main() {
       final geoJson = PredictedBusLayer.geoJson([bus]);
       final feature = (geoJson['features'] as List).single as Map;
 
-      expect((feature['properties'] as Map)['label'], '~ Route 01');
+      // Named as the timetable names the bus of this departure.
+      expect((feature['properties'] as Map)['label'], '~ Chitra');
       expect((feature['properties'] as Map)['routeId'], '01');
       expect((feature['geometry'] as Map)['coordinates'], [
         bus.position.longitude,
@@ -718,7 +719,9 @@ void main() {
       expect(find.text('Predicted'), findsOneWidget);
       expect(find.text('University → Club'), findsOneWidget);
       expect(find.text('From the timetable: left at 9:00 AM'), findsOneWidget);
-      expect(find.text('Named in the timetable: Chitra'), findsOneWidget);
+      // The bus's name is the card's title, with its route under it.
+      expect(find.text('Chitra'), findsOneWidget);
+      expect(find.text('Route 01'), findsWidgets);
       expect(find.textContaining('Should reach Middle about'), findsOneWidget);
 
       // Tapping it opens its route.

@@ -4,7 +4,8 @@ import 'package:bu_bus_tracker/features/schedule/domain/bus_schedule.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 LocalizedText t(String en) => LocalizedText(en: en);
-ScheduledTrip trip(int h, int m, String v) => ScheduledTrip(minutes: h * 60 + m, vehicles: t(v));
+ScheduledTrip trip(int h, int m, String v) =>
+    ScheduledTrip(minutes: h * 60 + m, vehicles: t(v));
 
 final schedule = BusSchedule(
   source: 'test',
@@ -17,8 +18,14 @@ final schedule = BusSchedule(
       routeNumber: '01',
       stops: [t('Barishal Club'), t('Kathaltola'), t('University')],
       departures: [
-        DeparturePoint(from: t('University'), trips: [trip(13, 15, 'Jayanti'), trip(8, 30, 'Boikali')]),
-        DeparturePoint(from: t('Barishal Club'), trips: [trip(7, 30, 'Chitra')]),
+        DeparturePoint(
+          from: t('University'),
+          trips: [trip(13, 15, 'Jayanti'), trip(8, 30, 'Boikali')],
+        ),
+        DeparturePoint(
+          from: t('Barishal Club'),
+          trips: [trip(7, 30, 'Chitra')],
+        ),
       ],
     ),
     RouteTimetable(
@@ -34,14 +41,20 @@ final schedule = BusSchedule(
       groupId: 'teacher',
       routeNumber: '04',
       stops: const [],
-      departures: [DeparturePoint(from: t('University'), trips: [trip(9, 0, 'Micro-02')])],
+      departures: [
+        DeparturePoint(from: t('University'), trips: [trip(9, 0, 'Micro-02')]),
+      ],
     ),
   ],
 );
 
 void main() {
   test('every departure for the group, in time order, with where it goes', () {
-    final all = widgetDepartures(schedule, const WidgetChoice(), routeColors: {'01': '#F2994A'});
+    final all = widgetDepartures(
+      schedule,
+      const WidgetChoice(),
+      routeColors: {'01': '#F2994A'},
+    );
     expect([for (final d in all) d.minutes], [450, 465, 510, 795, 840]);
     final first = all.first;
     expect(first.route, '01');
@@ -60,16 +73,25 @@ void main() {
   });
 
   test('to campus and from campus', () {
-    final to = widgetDepartures(schedule, const WidgetChoice(direction: WidgetDirection.toUniversity));
+    final to = widgetDepartures(
+      schedule,
+      const WidgetChoice(direction: WidgetDirection.toUniversity),
+    );
     expect(to.every((d) => d.to == 'University'), isTrue);
     expect(to, hasLength(2));
-    final from = widgetDepartures(schedule, const WidgetChoice(direction: WidgetDirection.fromUniversity));
+    final from = widgetDepartures(
+      schedule,
+      const WidgetChoice(direction: WidgetDirection.fromUniversity),
+    );
     expect(from.every((d) => d.from == 'University'), isTrue);
     expect(from, hasLength(3));
   });
 
   test('the snapshot carries the title, live count and departures', () {
-    const choice = WidgetChoice(route: '01', direction: WidgetDirection.toUniversity);
+    const choice = WidgetChoice(
+      route: '01',
+      direction: WidgetDirection.toUniversity,
+    );
     final json = widgetSnapshot(
       choice: choice,
       departures: widgetDepartures(schedule, choice),
@@ -83,13 +105,18 @@ void main() {
   });
 
   test('the choice survives a restart', () {
-    const choice = WidgetChoice(groupId: 'staff', route: '05', direction: WidgetDirection.fromUniversity);
+    const choice = WidgetChoice(
+      groupId: 'staff',
+      route: '05',
+      direction: WidgetDirection.fromUniversity,
+    );
     expect(WidgetChoice.fromJson(choice.toJson()), choice);
     expect(WidgetChoice.fromJson(const {}), const WidgetChoice());
   });
 
   test('live buses are counted only on the chosen route', () {
-    Bus bus(String id, String? route) => Bus(id: id, number: id, name: id, routeId: route, isActive: true);
+    Bus bus(String id, String? route) =>
+        Bus(id: id, number: id, name: id, routeId: route, isActive: true);
     final buses = [
       TrackedBus(bus: bus('a', '01')),
       TrackedBus(bus: bus('b', '02')),
@@ -98,6 +125,9 @@ void main() {
     bool live(BusLocation? _) => true;
     expect(liveBusCount(buses, const WidgetChoice(), live), 3);
     expect(liveBusCount(buses, const WidgetChoice(route: '01'), live), 2);
-    expect(liveBusCount(buses, const WidgetChoice(route: '01'), (_) => false), 0);
+    expect(
+      liveBusCount(buses, const WidgetChoice(route: '01'), (_) => false),
+      0,
+    );
   });
 }
