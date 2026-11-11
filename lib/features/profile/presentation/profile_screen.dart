@@ -66,7 +66,7 @@ class ProfileScreen extends ConsumerWidget {
                   title: 'Theme',
                   subtitle: switch (ref.watch(themeModeProvider)) {
                     ThemeMode.dark => "Dark, the app's own look.",
-                    ThemeMode.light => 'Light, on warm ivory.',
+                    ThemeMode.light => 'Light, on cool white.',
                     ThemeMode.system => "Follows this phone's setting.",
                   },
                 ),
@@ -193,7 +193,9 @@ class _AppHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final onBrand = scheme.onPrimary;
+    // A tonal card: the accent's own container colour, with the text made
+    // for it, so it reads the same at every corner in both themes.
+    final onBrand = scheme.onPrimaryContainer;
     final config = ref.watch(universityMapConfigurationProvider);
 
     final account = ref.watch(accountProvider).value;
@@ -218,12 +220,8 @@ class _AppHeader extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          // The two brand reds.
-          colors: [scheme.primary, scheme.primaryContainer],
-        ),
+        color: scheme.primaryContainer,
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.35)),
       ),
       child: Stack(
         children: [
@@ -231,12 +229,18 @@ class _AppHeader extends ConsumerWidget {
           Positioned(
             top: -70,
             right: -50,
-            child: _Disc(size: 190, color: onBrand.withValues(alpha: 0.07)),
+            child: _Disc(
+              size: 190,
+              color: scheme.primary.withValues(alpha: 0.12),
+            ),
           ),
           Positioned(
             bottom: -90,
             left: -40,
-            child: _Disc(size: 170, color: onBrand.withValues(alpha: 0.05)),
+            child: _Disc(
+              size: 170,
+              color: scheme.primary.withValues(alpha: 0.08),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -248,16 +252,14 @@ class _AppHeader extends ConsumerWidget {
                     Container(
                       width: 58,
                       height: 58,
+                      // The one solid spot of accent on the card.
                       decoration: BoxDecoration(
-                        color: onBrand.withValues(alpha: 0.16),
+                        color: scheme.primary,
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: onBrand.withValues(alpha: 0.22),
-                        ),
                       ),
                       child: Icon(
                         Icons.directions_bus_rounded,
-                        color: onBrand,
+                        color: scheme.onPrimary,
                         size: 30,
                       ),
                     ),
@@ -304,7 +306,7 @@ class _AppHeader extends ConsumerWidget {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: onBrand.withValues(alpha: 0.16),
+                    color: scheme.primary.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(AppRadius.xl),
                   ),
                   child: Row(
@@ -337,7 +339,7 @@ class _AppHeader extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: scheme.shadow.withValues(alpha: 0.18),
+                    color: scheme.surface.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: IntrinsicHeight(

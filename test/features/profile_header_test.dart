@@ -80,6 +80,38 @@ void main() {
       expect(find.text('BU Bus Tracker'), findsOneWidget);
     });
 
+    testWidgets('its text can be read on it, in the dark and the light', (
+      tester,
+    ) async {
+      double contrast(Color a, Color b) {
+        final la = a.computeLuminance();
+        final lb = b.computeLuminance();
+        return ((la > lb ? la : lb) + 0.05) / ((la > lb ? lb : la) + 0.05);
+      }
+
+      void check() {
+        final title = find.text('BU Bus Tracker');
+        final scheme = Theme.of(tester.element(title)).colorScheme;
+        // One colour behind every part of the card, not a fade.
+        for (final text in ['BU Bus Tracker', 'routes', 'live now']) {
+          final color = tester.widget<Text>(find.text(text)).style!.color!;
+          expect(
+            contrast(color, scheme.primaryContainer),
+            greaterThan(4.5),
+            reason: '"$text" on the card',
+          );
+        }
+      }
+
+      await pumpApp(tester);
+      await openTab(tester, 'Profile');
+      check();
+
+      await tester.tap(find.text('Light'));
+      await tester.pumpAndSettle();
+      check();
+    });
+
     testWidgets('the theme row says which theme is in use', (tester) async {
       await pumpApp(tester);
       await openTab(tester, 'Profile');
@@ -88,7 +120,7 @@ void main() {
 
       await tester.tap(find.text('Light'));
       await tester.pumpAndSettle();
-      expect(find.text('Light, on warm ivory.'), findsOneWidget);
+      expect(find.text('Light, on cool white.'), findsOneWidget);
     });
   });
 }

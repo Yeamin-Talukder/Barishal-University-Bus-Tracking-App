@@ -1046,6 +1046,57 @@ over time taken, stops included.
 - **Not checked:** on the phone; with no connection; learning from a real
   bus (none has driven yet).
 
+## Map page: following turns the map, key, colours (11 November 2026)
+
+### Following a bus turns the map
+
+- While a bus is followed the camera comes closer (zoom 16.6), leans
+  forward 45 degrees, and **turns to face the way the bus is going**, as a
+  navigation app does. Stopping returns the map to north-up and level.
+- The camera travels with the marker frame by frame (about 30 times a
+  second, where the marker alone is redrawn 15 times), so it does not
+  catch up in steps with each report.
+- The turn is eased: each frame the map turns 12% of the way to the bus's
+  heading, the short way round, so it does not twitch. With no direction
+  to trust (bus stopped, weak fix) the map keeps facing the way it was.
+- The passenger's own zoom is kept while following (13.5 to 18).
+- The bus is kept in the middle of the part of the map the sheet does not
+  cover, whichever way the map is turned
+  (`MapCameraController.centreFor`).
+- A "Following Bus N" label with a Stop button sits under the route chips,
+  since the map is moving by itself.
+
+### Map buttons
+
+- **Map key**: a sheet explaining each marker (live, delayed, offline,
+  predicted, stop) and the route lines, drawn with the same badges the map
+  uses.
+- **All routes**: zooms out to every route and lets go of what was picked.
+- University and My location as before.
+
+### Colours
+
+- The map's dark style was tuned for the crimson theme. It is now a cool
+  slate that matches the mint theme's surfaces; the light style is a cool
+  white. Nothing in the base map is mint: the accent stays for buses and
+  what is selected.
+- **Profile top card:** it faded from mint to a shade its own text could
+  not be read on, in both themes. It is now one tonal colour
+  (`primaryContainer`) with the text made for it, and a test checks the
+  contrast in dark and light.
+- The other pages (Routes, Stops, the test screen, Profile's sections)
+  were looked at in both themes; no other colour fault was found. The
+  theme line no longer says "warm ivory".
+
+### Checked, and not
+
+- 530 tests pass, with new ones for where the camera looks at any bearing,
+  the eased turn, the map key, "All routes", and the following label.
+- Web preview: the map colours, the four buttons, the Profile card.
+- **Not seen:** the map actually turning while following. The preview
+  would not show the lower half of the screen, so Follow could not be
+  pressed there. It needs trying on the phone.
+
 ## Map package version 2
 
 - A margin of extra tiles (half a large screen at each zoom, capped at 20 km)
@@ -1120,7 +1171,7 @@ Details: `website/README.md`.
 | Check | Result |
 |---|---|
 | `flutter analyze` | No issues |
-| `flutter test` | 518 tests pass |
+| `flutter test` | 530 tests pass |
 | Live tracking, passenger side | Checked in the web preview against the local emulators with a test position: the bus list showed "1 bus live", and a green marker with the bus number appeared on the map and moved when the position changed |
 | Driver mode | App tests and rule tests only. **Not run on a phone: no real trip, no background check, no real GPS** |
 | Tracking rules on the live project | Deployed. Without signing in, positions and trips can be read and nothing can be written; `admins` and `busDrivers` cannot be read |

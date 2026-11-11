@@ -40,6 +40,7 @@
 - Find every **bus stop and route** around the campus, Rupatoli, Kathaltola, Notun Bazar and the rest of the city on a clean map.
 - Follow **university buses in real time** as drivers share their position during a trip (in testing).
 - Use the **offline map of Barishal** with no internet connection.
+- **Try it without a bus:** the app can run pretend buses on your own phone, so you can see how tracking looks before real buses are sharing.
 
 No account is needed to use the app. It is built with Flutter, MapLibre and OpenStreetMap, with Firebase for the live data.
 
@@ -52,7 +53,11 @@ No account is needed to use the app. It is built with Flutter, MapLibre and Open
 | **Android** 7.0 or newer | Early access | [Latest APK from GitHub Releases](https://github.com/Yeamin-Talukder/Barishal-University-Bus-Tracking-App/releases/latest) |
 | **iPhone** (iOS 15.5+) | Planned | Needs a Mac to build and test |
 
+**Which file:** almost every Android phone from the last several years needs the `arm64` APK. The `armv7` APK is for older 32-bit phones; if the `arm64` one will not install, use that.
+
 **Installing the APK:** download it on your Android phone, open the file, allow *Install unknown apps* for your browser if asked, then tap **Install**. The offline map sets itself up on first launch. Download the app only from this repository or the [project website](https://yeamin-talukder.github.io/Barishal-University-Bus-Tracking-App/), and compare the SHA-256 checksum shown on the release if you want to be sure the file is untouched.
+
+> **Early-access signing:** these builds are signed with a development key, not the final release key. When the app moves to its final key (for Google Play), this version will have to be uninstalled before the new one can be installed. Nothing you do in the app as a passenger is lost: it keeps no account for you.
 
 ## Features
 
@@ -60,13 +65,16 @@ No account is needed to use the app. It is built with Flutter, MapLibre and Open
 |---|---|---|
 | 🗺️ | **Offline map of Barishal**: streets, buildings, river and landmarks along the bus routes, stored on the phone, light and dark, with 3D buildings | ✅ Available, tested in airplane mode |
 | 🕒 | **Official bus schedule**: 11 timetables and 101 departures for students, teachers and staff, in Bangla and English | ✅ Available |
-| 📍 | **Routes and stops**: student routes 01–03 on the map with their stops; search stops and see which routes call there | ✅ Available |
+| 📍 | **Routes and stops**: student routes 01–03 on the map with their stops; search stops by name, filter them by route, and see which routes call there | ✅ Available |
+| 🔁 | **Schedule by direction**: switch a route between "University → city" and "city → University" and see that direction's departures and stops in order | ✅ Available |
+| 🧭 | **Map key and quick views**: one tap for what each marker means, for every route at once, for the university, or for where you are | ✅ Available |
+| 🧪 | **Test the system**: run pretend buses on your own phone to see the app at work. Nothing is sent to the server, nobody else sees them, and each is named TEST | ✅ Available |
 | 👤 | **No account for passengers**: only drivers and transport office staff sign in, with Google | ✅ Available |
 | 🛠️ | **Transport office tools**: manage stops, the schedule, buses, staff roles and announcements from inside the app | ✅ Available |
-| 🚌 | **Live bus tracking**: buses move on the map in real time; follow a bus | 🧪 In testing |
+| 🚌 | **Live bus tracking**: buses glide along their route line in real time. Follow a bus and the map turns to face the way it is going, like a navigation app | 🧪 In testing |
 | 📱 | **Driver mode**: the driver's phone shares the bus's GPS during a trip, also in the background | 🧪 In testing |
-| ⏱️ | **Arrival times**: minutes until a bus reaches your stop, measured along the real route | 🧪 In testing |
-| 🔮 | **Predictions**: where a bus probably is when live data is missing, also offline, always labelled as a prediction | 🧪 In testing |
+| ⏱️ | **Arrival times**: minutes until a bus reaches your stop, measured along the real route, with which way each bus is going and how far away it is | 🧪 In testing |
+| 🔮 | **Predictions**: where a bus probably is when live data is missing, from the timetable and from where it was last seen. The app learns real travel speeds from live buses and keeps them on the phone, so predictions work offline. Always labelled as a prediction, never shown as live | 🧪 In testing |
 | 📢 | **Announcements** from the transport office, in the app | 🧪 In testing |
 | 🔔 | Push notifications · 🍏 iPhone version · ▶️ Google Play | 🗓️ Planned |
 
@@ -87,6 +95,8 @@ No account is needed to use the app. It is built with Flutter, MapLibre and Open
 2. **The cloud checks it.** Firebase security rules accept a position only from the driver assigned to that bus's active trip, at most once a second.
 3. **Passengers' phones show the bus** gliding along its route line, with its next stop and an arrival estimate. When the signal drops, a clearly labelled prediction takes over.
 
+A position that is not fresh is never shown as live: a bus is marked *Live*, *Delayed* or *Offline* by the age of its last report, and a predicted bus has its own dashed marker and the word *Predicted*.
+
 ## Roadmap
 
 - [x] Offline vector map of the bus routes (OpenStreetMap, PMTiles, MapLibre)
@@ -95,10 +105,12 @@ No account is needed to use the app. It is built with Flutter, MapLibre and Open
 - [x] Admin tools: stops, schedule, buses, people, announcements
 - [x] Driver mode and live tracking (built, testing on real buses)
 - [x] Arrival times and offline predictions (built, testing)
+- [x] On-device test mode, map key, heading-up following, schedule by direction
 - [ ] Trial runs on real university buses
 - [ ] Push notifications
 - [ ] Routes 04–08 on the map (the schedule lists no stops for them yet)
-- [ ] iPhone version and Google Play listing
+- [ ] Final release signing key, then a Google Play listing
+- [ ] iPhone version
 
 ## Tech stack
 
@@ -185,6 +197,12 @@ Yes. The map, the bus schedule and the stops are stored on the phone. Live bus p
 
 **Which University of Barishal bus routes are included?**
 Student routes 01 to 03, teacher routes 04 to 07 and staff routes 04, 05, 06 and 08, from the university's official bus schedule. Routes 01–03 are drawn on the map.
+
+**Can I see how it works before the buses are live?**
+Yes. Open **Profile → Test the system**, add a set of pretend buses and start them. They run on your phone only, are named TEST, and disappear when you stop the test.
+
+**What is a "predicted" bus?**
+When there is no live position for a bus, the app can show where it probably is, worked out from the timetable or from where the bus was last seen. It is drawn with a dashed marker and always says *Predicted*. The timetable does not say which days it runs, so on a holiday a predicted bus may not really be on the road.
 
 **Does the app track my location?**
 No. Your location is only used to show where you are on your own map, if you allow it, and is not uploaded. Bus positions come from the driver's phone during a trip.
