@@ -1,0 +1,93 @@
+<!doctype html>
+<!-- README cover for GitHub. Render with docs/cover/make_cover.ps1 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>README cover</title>
+<style>
+  html, body { margin: 0; width: 1600px; height: 760px; overflow: hidden; }
+  body {
+    position: relative; font-family: "Segoe UI", system-ui, sans-serif; color: #EEF2F6;
+    background:
+      radial-gradient(760px 520px at 88% 8%, rgba(95,212,188,.30), transparent 70%),
+      radial-gradient(700px 460px at 0% 110%, rgba(69,174,219,.22), transparent 70%),
+      linear-gradient(155deg, #1A2129 0%, #0F1318 62%);
+  }
+  .map { position: absolute; inset: 0; }
+  .frame { position: absolute; inset: 22px; border-radius: 34px; border: 1.5px solid rgba(255,255,255,.08); }
+  .copy { position: absolute; left: 96px; top: 96px; width: 800px; }
+  .brand { display: flex; align-items: center; gap: 22px; }
+  .brand img { width: 104px; height: 104px; border-radius: 26px; box-shadow: 0 18px 40px rgba(0,0,0,.5), 0 0 0 1.5px rgba(255,255,255,.08); }
+  .brand .tag { font-size: 20px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #7FE0CB; }
+  .brand .name { font-size: 30px; font-weight: 800; letter-spacing: -.5px; }
+  h1 { margin: 40px 0 0; font-size: 70px; line-height: 1.04; font-weight: 800; letter-spacing: -2.2px; }
+  h1 .mint { background: linear-gradient(100deg, #A7F0DF, #5FD4BC 50%, #4FB7E6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .bn { margin: 22px 0 0; font-family: "Nirmala UI", "Hind Siliguri", sans-serif; font-size: 23px; color: #C3CDD6; white-space: nowrap; }
+  .chips { display: flex; flex-wrap: nowrap; gap: 10px; margin-top: 34px; }
+  .chip { display: flex; align-items: center; gap: 9px; padding: 10px 16px; border-radius: 999px; font-size: 18px; font-weight: 650;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.13); }
+  .chip i { width: 10px; height: 10px; border-radius: 50%; background: #5FD4BC; }
+  .chip.live { color: #FFC53D; border-color: rgba(255,197,61,.38); }
+  .chip.live i { background: #FFC53D; box-shadow: 0 0 0 5px rgba(255,197,61,.18); }
+  .chip.route i { background: #F2994A; }
+  .chip.off i { background: #6FA8FF; }
+  .phones { position: absolute; right: 70px; top: 0; width: 700px; height: 760px; }
+  .phone { position: absolute; width: 268px; height: 580px; border-radius: 42px; background: #05080A; padding: 10px; box-sizing: border-box;
+    box-shadow: 0 34px 70px rgba(0,0,0,.6), 0 0 0 1.5px rgba(255,255,255,.09); }
+  .phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 33px; display: block; }
+  .p1 { left: 18px; top: 150px; transform: rotate(-9deg); }
+  .p2 { left: 224px; top: 70px; z-index: 2; transform: rotate(0deg); width: 286px; height: 618px; }
+  .p3 { left: 432px; top: 150px; transform: rotate(9deg); }
+  .badge { position: absolute; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 13px 18px 13px 13px; border-radius: 20px;
+    background: rgba(26,32,40,.86); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 16px 34px rgba(0,0,0,.45); font-size: 17px; line-height: 1.25; }
+  .badge b { display: block; font-size: 18px; }
+  .badge small { color: #AEB8C2; font-size: 15px; }
+  .badge .ic { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; background: rgba(95,212,188,.16); color: #7FE0CB; font-weight: 800; font-size: 18px; }
+  .b1 { left: -40px; top: 92px; }
+  .b2 { right: -24px; bottom: 96px; }
+  .b2 .ic { background: rgba(242,153,74,.18); color: #F2994A; }
+  .foot { position: absolute; left: 96px; bottom: 74px; font-size: 18px; color: #8592A0; letter-spacing: .02em; }
+  .foot b { color: #AEB8C2; font-weight: 650; }
+</style>
+</head>
+<body>
+  <svg class="map" viewBox="0 0 1600 760" preserveAspectRatio="none" aria-hidden="true">
+    <g fill="none" stroke="rgba(255,255,255,.045)" stroke-width="16" stroke-linecap="round">
+      <path d="M-40 210 C 300 170 700 260 1640 180"/>
+      <path d="M-40 520 C 400 480 820 560 1640 500"/>
+      <path d="M380 -40 C 420 260 340 520 410 800"/>
+      <path d="M980 -40 C 940 260 1040 500 990 800"/>
+    </g>
+    <path d="M-60 690 C 240 640 380 720 520 800" fill="none" stroke="rgba(69,174,219,.12)" stroke-width="70" stroke-linecap="round"/>
+    <path d="M-30 745 C 300 715 520 690 760 712 S 1180 700 1640 600" fill="none" stroke="#0F1318" stroke-width="20" stroke-linecap="round"/>
+    <path d="M-30 745 C 300 715 520 690 760 712 S 1180 700 1640 600" fill="none" stroke="#F2994A" stroke-width="8" stroke-linecap="round" opacity=".85"/>
+    <g fill="#0F1318" stroke="#F2994A" stroke-width="5"><circle cx="300" cy="716" r="9"/><circle cx="760" cy="712" r="9"/></g>
+  </svg>
+  <div class="frame"></div>
+
+  <div class="copy">
+    <div class="brand">
+      <img src="../../assets/icons/app_icon.png" alt="">
+      <div><div class="tag">Open source · Free</div><div class="name">BU Bus Tracker</div></div>
+    </div>
+    <h1>Barishal University<br><span class="mint">Bus Tracking App</span></h1>
+    <p class="bn">বরিশাল বিশ্ববিদ্যালয়ের বাস: লাইভ লোকেশন, সময়সূচি, অফলাইন ম্যাপ</p>
+    <div class="chips">
+      <span class="chip live"><i></i>Live bus tracking</span>
+      <span class="chip"><i></i>Official schedule</span>
+      <span class="chip route"><i></i>Routes &amp; stops</span>
+      <span class="chip off"><i></i>Offline map</span>
+    </div>
+  </div>
+
+  <div class="phones">
+    <div class="phone p1"><img src="../../website/src/assets/screens/schedule.webp" alt=""></div>
+    <div class="phone p2"><img src="../../website/src/assets/screens/map-dark.webp" alt=""></div>
+    <div class="phone p3"><img src="../../website/src/assets/screens/stops.webp" alt=""></div>
+    <div class="badge b1"><span class="ic">8:30</span><span><b>Student route 01</b><small>From University · Boikali</small></span></div>
+    <div class="badge b2"><span class="ic">●</span><span><b>Works offline</b><small>Map, schedule &amp; stops</small></span></div>
+  </div>
+
+  <div class="foot"><b>Flutter</b> · MapLibre · OpenStreetMap · Firebase &nbsp;—&nbsp; University of Barishal, Bangladesh</div>
+</body>
+</html>

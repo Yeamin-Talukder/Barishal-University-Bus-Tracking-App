@@ -1,0 +1,1109 @@
+{
+  "version": 1,
+  "source": "University of Barishal bus schedule, from screenshots of the university's Bus Schedule screen supplied by the project owner.",
+  "recordedOn": "2026-11-10",
+  "notes": [
+    "The Bangla text is copied as written. The English text is a transliteration and is not part of the official schedule.",
+    "The schedule does not say on which days it applies.",
+    "Routes 04 to 08 had no list of stops on the screen."
+  ],
+  "groups": [
+    {
+      "id": "student",
+      "name": "Student"
+    },
+    {
+      "id": "teacher",
+      "name": "Teacher"
+    },
+    {
+      "id": "staff",
+      "name": "Staff"
+    }
+  ],
+  "timetables": [
+    {
+      "group": "student",
+      "route": "01",
+      "stops": [
+        {
+          "bn": "বরিশাল ক্লাব",
+          "en": "Barishal Club"
+        },
+        {
+          "bn": "বাংলাবাজার মোড়",
+          "en": "Bangla Bazar Mor"
+        },
+        {
+          "bn": "নুরিয়া স্কুল",
+          "en": "Nuria School"
+        },
+        {
+          "bn": "আমতলার মোড়",
+          "en": "Amtala Mor"
+        },
+        {
+          "bn": "রুপাতলী হাউজিং",
+          "en": "Rupatoli Housing"
+        },
+        {
+          "bn": "কাঠালতলা",
+          "en": "Kathaltola"
+        },
+        {
+          "bn": "টোলঘর",
+          "en": "Toll Ghar"
+        },
+        {
+          "bn": "বিশ্ববিদ্যালয়",
+          "en": "University"
+        }
+      ],
+      "departures": [
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "08:30",
+              "vehicles": {
+                "bn": "বৈকালি, বিআরটিসি-০৬",
+                "en": "Boikali, BRTC-06"
+              }
+            },
+            {
+              "time": "09:30",
+              "vehicles": {
+                "bn": "চিত্রা, বিআরটিসি-০৫",
+                "en": "Chitra, BRTC-05"
+              }
+            },
+            {
+              "time": "10:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৪",
+                "en": "BRTC-04"
+              }
+            },
+            {
+              "time": "11:15",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৫",
+                "en": "BRTC-05"
+              }
+            },
+            {
+              "time": "12:10",
+              "vehicles": {
+                "bn": "কীর্তনখোলা, বিআরটিসি-০৬",
+                "en": "Kirtankhola, BRTC-06"
+              }
+            },
+            {
+              "time": "13:15",
+              "vehicles": {
+                "bn": "জয়ন্তী, বিআরটিসি-০৪",
+                "en": "Jayanti, BRTC-04"
+              }
+            },
+            {
+              "time": "14:15",
+              "vehicles": {
+                "bn": "বৈকালি, বিআরটিসি-০৬",
+                "en": "Boikali, BRTC-06"
+              }
+            },
+            {
+              "time": "15:10",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৪,০৫",
+                "en": "BRTC-04,05"
+              }
+            },
+            {
+              "time": "16:10",
+              "vehicles": {
+                "bn": "চিত্রা, বিআরটিসি-০৪,০৬",
+                "en": "Chitra, BRTC-04,06"
+              }
+            },
+            {
+              "time": "17:10",
+              "vehicles": {
+                "bn": "চিত্রা ও বৈকালি",
+                "en": "Chitra and Boikali"
+              }
+            },
+            {
+              "time": "18:45",
+              "vehicles": {
+                "bn": "লতা/কীর্তনখোলা/পায়রা/চিত্রা/বৈকালি/জয়ন্তী",
+                "en": "Lota/Kirtankhola/Payra/Chitra/Boikali/Jayanti"
+              }
+            },
+            {
+              "time": "21:00",
+              "vehicles": {
+                "bn": "লতা/কীর্তনখোলা/পায়রা/চিত্রা/বৈকালি/জয়ন্তী",
+                "en": "Lota/Kirtankhola/Payra/Chitra/Boikali/Jayanti"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "বরিশাল ক্লাব",
+            "en": "Barishal Club"
+          },
+          "trips": [
+            {
+              "time": "07:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৬",
+                "en": "BRTC-06"
+              }
+            },
+            {
+              "time": "08:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৪,০৫",
+                "en": "BRTC-04,05"
+              }
+            },
+            {
+              "time": "09:15",
+              "vehicles": {
+                "bn": "বৈকালি, বিআরটিসি-০৬",
+                "en": "Boikali, BRTC-06"
+              }
+            },
+            {
+              "time": "10:15",
+              "vehicles": {
+                "bn": "চিত্রা, বিআরটিসি-০৫",
+                "en": "Chitra, BRTC-05"
+              }
+            },
+            {
+              "time": "11:15",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৪",
+                "en": "BRTC-04"
+              }
+            },
+            {
+              "time": "12:00",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৫",
+                "en": "BRTC-05"
+              }
+            },
+            {
+              "time": "13:00",
+              "vehicles": {
+                "bn": "কীর্তনখোলা, বিআরটিসি-০৬",
+                "en": "Kirtankhola, BRTC-06"
+              }
+            },
+            {
+              "time": "14:00",
+              "vehicles": {
+                "bn": "জয়ন্তী, বিআরটিসি-০৪",
+                "en": "Jayanti, BRTC-04"
+              }
+            },
+            {
+              "time": "15:00",
+              "vehicles": {
+                "bn": "বৈকালী, বিআরটিসি-০৬",
+                "en": "Boikali, BRTC-06"
+              }
+            },
+            {
+              "time": "15:40",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৪,০৫",
+                "en": "BRTC-04,05"
+              }
+            },
+            {
+              "time": "16:40",
+              "vehicles": {
+                "bn": "চিত্রা",
+                "en": "Chitra"
+              }
+            },
+            {
+              "time": "20:30",
+              "vehicles": {
+                "bn": "২টি বাস (লতা/কীর্তনখোলা/পায়রা/চিত্রা/বৈকালি/জয়ন্তী)",
+                "en": "2 buses (Lota/Kirtankhola/Payra/Chitra/Boikali/Jayanti)"
+              }
+            },
+            {
+              "time": "21:30",
+              "vehicles": {
+                "bn": "লতা/কীর্তনখোলা/পায়রা/চিত্রা/বৈকালি/জয়ন্তী",
+                "en": "Lota/Kirtankhola/Payra/Chitra/Boikali/Jayanti"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "student",
+      "route": "02",
+      "stops": [
+        {
+          "bn": "নতুন বাজার (টেম্পু স্ট্যান্ড)",
+          "en": "Notun Bazar (Tempo Stand)"
+        },
+        {
+          "bn": "মুন্সি গ্যারেজ",
+          "en": "Munshi Garage"
+        },
+        {
+          "bn": "অপসোনিন মোড়",
+          "en": "Opsonin Mor"
+        },
+        {
+          "bn": "বটতলার মোড়",
+          "en": "Bottola Mor"
+        },
+        {
+          "bn": "করিমকুটির",
+          "en": "Karim Kutir"
+        },
+        {
+          "bn": "চৌমাথা মোড়",
+          "en": "Chowmatha Mor"
+        },
+        {
+          "bn": "থানা কাউন্সিলের মূল গেট",
+          "en": "Thana Council Main Gate"
+        },
+        {
+          "bn": "আমতলার মোড়",
+          "en": "Amtala Mor"
+        },
+        {
+          "bn": "রুপাতলী হাউজিং",
+          "en": "Rupatoli Housing"
+        },
+        {
+          "bn": "কাঁঠালতলা",
+          "en": "Kathaltola"
+        },
+        {
+          "bn": "টোলঘর",
+          "en": "Toll Ghar"
+        },
+        {
+          "bn": "বিশ্ববিদ্যালয়",
+          "en": "University"
+        }
+      ],
+      "departures": [
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "07:45",
+              "vehicles": {
+                "bn": "সুগন্ধা",
+                "en": "Sugandha"
+              }
+            },
+            {
+              "time": "08:30",
+              "vehicles": {
+                "bn": "সন্ধ্যা",
+                "en": "Sandhya"
+              }
+            },
+            {
+              "time": "09:30",
+              "vehicles": {
+                "bn": "আগুনমুখা",
+                "en": "Agunmukha"
+              }
+            },
+            {
+              "time": "10:30",
+              "vehicles": {
+                "bn": "সুগন্ধা",
+                "en": "Sugandha"
+              }
+            },
+            {
+              "time": "11:15",
+              "vehicles": {
+                "bn": "সন্ধ্যা",
+                "en": "Sandhya"
+              }
+            },
+            {
+              "time": "12:10",
+              "vehicles": {
+                "bn": "আগুনমুখা",
+                "en": "Agunmukha"
+              }
+            },
+            {
+              "time": "13:15",
+              "vehicles": {
+                "bn": "সুগন্ধা",
+                "en": "Sugandha"
+              }
+            },
+            {
+              "time": "14:15",
+              "vehicles": {
+                "bn": "আন্ধারমানিক",
+                "en": "Andharmanik"
+              }
+            },
+            {
+              "time": "15:10",
+              "vehicles": {
+                "bn": "সন্ধ্যা",
+                "en": "Sandhya"
+              }
+            },
+            {
+              "time": "16:10",
+              "vehicles": {
+                "bn": "সন্ধ্যা, সুগন্ধা",
+                "en": "Sandhya, Sugandha"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "নতুন বাজার (টেম্পুস্ট্যান্ড)",
+            "en": "Notun Bazar (Tempo Stand)"
+          },
+          "trips": [
+            {
+              "time": "07:30",
+              "vehicles": {
+                "bn": "আন্ধারমানিক",
+                "en": "Andharmanik"
+              }
+            },
+            {
+              "time": "08:30",
+              "vehicles": {
+                "bn": "সুগন্ধা",
+                "en": "Sugandha"
+              }
+            },
+            {
+              "time": "09:15",
+              "vehicles": {
+                "bn": "সন্ধ্যা",
+                "en": "Sandhya"
+              }
+            },
+            {
+              "time": "10:15",
+              "vehicles": {
+                "bn": "আগুনমুখা, আন্ধারমানিক",
+                "en": "Agunmukha, Andharmanik"
+              }
+            },
+            {
+              "time": "11:15",
+              "vehicles": {
+                "bn": "সুগন্ধা",
+                "en": "Sugandha"
+              }
+            },
+            {
+              "time": "12:00",
+              "vehicles": {
+                "bn": "সন্ধ্যা",
+                "en": "Sandhya"
+              }
+            },
+            {
+              "time": "12:45",
+              "vehicles": {
+                "bn": "আগুনমুখা",
+                "en": "Agunmukha"
+              }
+            },
+            {
+              "time": "13:50",
+              "vehicles": {
+                "bn": "সুগন্ধা",
+                "en": "Sugandha"
+              }
+            },
+            {
+              "time": "14:45",
+              "vehicles": {
+                "bn": "আন্ধারমানিক",
+                "en": "Andharmanik"
+              }
+            },
+            {
+              "time": "15:40",
+              "vehicles": {
+                "bn": "সন্ধ্যা",
+                "en": "Sandhya"
+              }
+            },
+            {
+              "time": "16:40",
+              "vehicles": {
+                "bn": "সন্ধ্যা, সুগন্ধা",
+                "en": "Sandhya, Sugandha"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "student",
+      "route": "03",
+      "stops": [
+        {
+          "bn": "নথুল্লাবাদ ব্রীজের ঢাল",
+          "en": "Nathullabad Bridge Slope"
+        },
+        {
+          "bn": "কলেজ এভিনিউ",
+          "en": "College Avenue"
+        },
+        {
+          "bn": "টিটিসি মূল গেট",
+          "en": "TTC Main Gate"
+        },
+        {
+          "bn": "চৌমাথা মোড়",
+          "en": "Chowmatha Mor"
+        },
+        {
+          "bn": "থানা কাউন্সিলের মূল গেট",
+          "en": "Thana Council Main Gate"
+        },
+        {
+          "bn": "আমতলার মোড়",
+          "en": "Amtala Mor"
+        },
+        {
+          "bn": "রুপাতলী হাউজিং",
+          "en": "Rupatoli Housing"
+        },
+        {
+          "bn": "কাঁঠালতলা",
+          "en": "Kathaltola"
+        },
+        {
+          "bn": "টোলঘর",
+          "en": "Toll Ghar"
+        },
+        {
+          "bn": "বিশ্ববিদ্যালয়",
+          "en": "University"
+        }
+      ],
+      "departures": [
+        {
+          "from": {
+            "bn": "নথুল্লাবাদ ব্রীজের ঢাল",
+            "en": "Nathullabad Bridge Slope"
+          },
+          "trips": [
+            {
+              "time": "07:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৭",
+                "en": "BRTC-07"
+              }
+            },
+            {
+              "time": "08:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৮,১১",
+                "en": "BRTC-08,11"
+              }
+            },
+            {
+              "time": "09:15",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৯,১০",
+                "en": "BRTC-09,10"
+              }
+            },
+            {
+              "time": "10:15",
+              "vehicles": {
+                "bn": "বিআরটিসি-১২,১৩,১৪",
+                "en": "BRTC-12,13,14"
+              }
+            },
+            {
+              "time": "11:15",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৭,১১",
+                "en": "BRTC-07,11"
+              }
+            },
+            {
+              "time": "12:00",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৮,০৯",
+                "en": "BRTC-08,09"
+              }
+            },
+            {
+              "time": "12:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-১০,১২",
+                "en": "BRTC-10,12"
+              }
+            },
+            {
+              "time": "13:00",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৭,১৩",
+                "en": "BRTC-07,13"
+              }
+            },
+            {
+              "time": "14:00",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৮",
+                "en": "BRTC-08"
+              }
+            },
+            {
+              "time": "15:00",
+              "vehicles": {
+                "bn": "বিআরটিসি-১৪",
+                "en": "BRTC-14"
+              }
+            },
+            {
+              "time": "15:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-১২",
+                "en": "BRTC-12"
+              }
+            },
+            {
+              "time": "16:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৯",
+                "en": "BRTC-09"
+              }
+            },
+            {
+              "time": "20:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৮,১৩",
+                "en": "BRTC-08,13"
+              }
+            },
+            {
+              "time": "21:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৮,১৩",
+                "en": "BRTC-08,13"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "08:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৭",
+                "en": "BRTC-07"
+              }
+            },
+            {
+              "time": "09:30",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৮,১১",
+                "en": "BRTC-08,11"
+              }
+            },
+            {
+              "time": "10:00",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৯,১০",
+                "en": "BRTC-09,10"
+              }
+            },
+            {
+              "time": "11:15",
+              "vehicles": {
+                "bn": "বিআরটিসি-১২,১৩",
+                "en": "BRTC-12,13"
+              }
+            },
+            {
+              "time": "12:10",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৭,১১",
+                "en": "BRTC-07,11"
+              }
+            },
+            {
+              "time": "13:15",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৮,০৯",
+                "en": "BRTC-08,09"
+              }
+            },
+            {
+              "time": "14:15",
+              "vehicles": {
+                "bn": "বিআরটিসি-১২,১৪",
+                "en": "BRTC-12,14"
+              }
+            },
+            {
+              "time": "15:10",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৭,১৩",
+                "en": "BRTC-07,13"
+              }
+            },
+            {
+              "time": "16:10",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৮,১০,১৪",
+                "en": "BRTC-08,10,14"
+              }
+            },
+            {
+              "time": "17:10",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৯,১২",
+                "en": "BRTC-09,12"
+              }
+            },
+            {
+              "time": "18:45",
+              "vehicles": {
+                "bn": "লতা/কীর্তনখোলা/পায়রা/চিত্রা/বৈকালি/জয়ন্তী",
+                "en": "Lota/Kirtankhola/Payra/Chitra/Boikali/Jayanti"
+              }
+            },
+            {
+              "time": "21:00",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৮,১৩",
+                "en": "BRTC-08,13"
+              }
+            },
+            {
+              "time": "22:00",
+              "vehicles": {
+                "bn": "বিআরটিসি-০৮,১৩",
+                "en": "BRTC-08,13"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "teacher",
+      "route": "04",
+      "stops": [],
+      "departures": [
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "14:00",
+              "vehicles": {
+                "bn": "মাইক্রো-০৪",
+                "en": "Micro-04"
+              }
+            },
+            {
+              "time": "16:05",
+              "vehicles": {
+                "bn": "নয়াভাঙ্গানী",
+                "en": "Noyabhangani"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "চৌমাথা মোড়",
+            "en": "Chowmatha Mor"
+          },
+          "trips": [
+            {
+              "time": "08:30",
+              "vehicles": {
+                "bn": "নয়াভাঙ্গানী",
+                "en": "Noyabhangani"
+              }
+            },
+            {
+              "time": "09:50",
+              "vehicles": {
+                "bn": "নয়াভাঙ্গানী",
+                "en": "Noyabhangani"
+              }
+            },
+            {
+              "time": "12:00",
+              "vehicles": {
+                "bn": "মাইক্রো-০২",
+                "en": "Micro-02"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "teacher",
+      "route": "05",
+      "stops": [],
+      "departures": [
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "19:00",
+              "vehicles": {
+                "bn": "ইলিশা",
+                "en": "Ilisha"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "চৌমাথা মোড়",
+            "en": "Chowmatha Mor"
+          },
+          "trips": [
+            {
+              "time": "07:30",
+              "vehicles": {
+                "bn": "মাইক্রো-০৪",
+                "en": "Micro-04"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "teacher",
+      "route": "06",
+      "stops": [],
+      "departures": [
+        {
+          "from": {
+            "bn": "চৌমাথা মোড়",
+            "en": "Chowmatha Mor"
+          },
+          "trips": [
+            {
+              "time": "08:30",
+              "vehicles": {
+                "bn": "ইলিশা",
+                "en": "Ilisha"
+              }
+            },
+            {
+              "time": "10:00",
+              "vehicles": {
+                "bn": "লতা",
+                "en": "Lota"
+              }
+            },
+            {
+              "time": "12:00",
+              "vehicles": {
+                "bn": "ইলিশা",
+                "en": "Ilisha"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "14:00",
+              "vehicles": {
+                "bn": "নয়াভাঙ্গানী",
+                "en": "Noyabhangani"
+              }
+            },
+            {
+              "time": "16:05",
+              "vehicles": {
+                "bn": "লতা",
+                "en": "Lota"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "teacher",
+      "route": "07",
+      "stops": [],
+      "departures": [
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "14:00",
+              "vehicles": {
+                "bn": "মাইক্রো-০৩",
+                "en": "Micro-03"
+              }
+            },
+            {
+              "time": "16:05",
+              "vehicles": {
+                "bn": "মাইক্রো-০৩",
+                "en": "Micro-03"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "ট্রাস্ট ভবন",
+            "en": "Trust Bhaban"
+          },
+          "trips": [
+            {
+              "time": "09:00",
+              "vehicles": {
+                "bn": "মাইক্রো-০৩",
+                "en": "Micro-03"
+              }
+            },
+            {
+              "time": "10:30",
+              "vehicles": {
+                "bn": "মাইক্রো-০৩",
+                "en": "Micro-03"
+              }
+            },
+            {
+              "time": "12:30",
+              "vehicles": {
+                "bn": "মাইক্রো-০৩",
+                "en": "Micro-03"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "staff",
+      "route": "04",
+      "stops": [],
+      "departures": [
+        {
+          "from": {
+            "bn": "চৌমাথা মোড়",
+            "en": "Chowmatha Mor"
+          },
+          "trips": [
+            {
+              "time": "08:30",
+              "vehicles": {
+                "bn": "আগুনমুখা",
+                "en": "Agunmukha"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "16:05",
+              "vehicles": {
+                "bn": "আগুনমুখা",
+                "en": "Agunmukha"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "staff",
+      "route": "05",
+      "stops": [],
+      "departures": [
+        {
+          "from": {
+            "bn": "চৌমাথা মোড়",
+            "en": "Chowmatha Mor"
+          },
+          "trips": [
+            {
+              "time": "08:25",
+              "vehicles": {
+                "bn": "মাইক্রো-০৫",
+                "en": "Micro-05"
+              }
+            },
+            {
+              "time": "08:25",
+              "vehicles": {
+                "bn": "আন্ধারমানিক",
+                "en": "Andharmanik"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "16:05",
+              "vehicles": {
+                "bn": "মাইক্রো-০৫",
+                "en": "Micro-05"
+              }
+            },
+            {
+              "time": "16:10",
+              "vehicles": {
+                "bn": "সুগন্ধা",
+                "en": "Sugandha"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "staff",
+      "route": "06",
+      "stops": [],
+      "departures": [
+        {
+          "from": {
+            "bn": "চৌমাথা মোড়",
+            "en": "Chowmatha Mor"
+          },
+          "trips": [
+            {
+              "time": "08:30",
+              "vehicles": {
+                "bn": "কীর্তনখোলা",
+                "en": "Kirtankhola"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "16:05",
+              "vehicles": {
+                "bn": "কীর্তনখোলা",
+                "en": "Kirtankhola"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "staff",
+      "route": "08",
+      "stops": [],
+      "departures": [
+        {
+          "from": {
+            "bn": "বিশ্ববিদ্যালয়",
+            "en": "University"
+          },
+          "trips": [
+            {
+              "time": "16:10",
+              "vehicles": {
+                "bn": "বৈকালি",
+                "en": "Boikali"
+              }
+            },
+            {
+              "time": "16:10",
+              "vehicles": {
+                "bn": "জয়ন্তী",
+                "en": "Jayanti"
+              }
+            }
+          ]
+        },
+        {
+          "from": {
+            "bn": "নথুল্লাবাদ",
+            "en": "Nathullabad"
+          },
+          "trips": [
+            {
+              "time": "08:20",
+              "vehicles": {
+                "bn": "জয়ন্তী",
+                "en": "Jayanti"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

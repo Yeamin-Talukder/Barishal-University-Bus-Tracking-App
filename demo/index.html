@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BU Campus Shuttle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+/* Layout: app shell. Info panel on the left (desktop) or under the map (phone); the map fills the rest. */
+:root {
+  --bg: #eef2f0;
+  --surface: #ffffff;
+  --ink: #13201b;
+  --ink-2: #4b5d56;
+  --ink-3: #7f8f89;
+  --line: #d8e0dc;
+  --route: #1c5d78;
+  --bus-a: #0f8a5f;
+  --bus-b: #d4621a;
+  --on-bus: #ffffff;
+  --warn: #a8660f;
+  --off: #8a9590;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-bn: "Hind Siliguri", "Noto Sans Bengali", "Vrinda", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1513; --surface: #18201d; --ink: #e6eeea; --ink-2: #a9b8b1; --ink-3: #73827b;
+    --line: #2a3531; --route: #5fb3d3; --bus-a: #2fbf86; --bus-b: #f08a3e; --on-bus: #0f1513;
+    --warn: #e0a548; --off: #6c7a74; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1513; --surface: #18201d; --ink: #e6eeea; --ink-2: #a9b8b1; --ink-3: #73827b;
+  --line: #2a3531; --route: #5fb3d3; --bus-a: #2fbf86; --bus-b: #f08a3e; --on-bus: #0f1513;
+  --warn: #e0a548; --off: #6c7a74; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.45 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+.bn { font-family: var(--font-bn); color: var(--ink-3); font-weight: 400; }
+.num { font-variant-numeric: tabular-nums; }
+
+.app { display: grid; grid-template-columns: 392px 1fr; height: 100%; }
+.panel {
+  overflow-y: auto; border-right: 1px solid var(--line);
+  padding-block: 20px 28px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: 16px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.mapwrap { position: relative; min-width: 0; }
+#map { position: absolute; inset: 0; }
+
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; height: auto; }
+  .mapwrap { height: 56vh; order: -1; }
+  .panel { border-right: 0; overflow: visible; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+
+/* Header */
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+h1 { font: 700 26px/1.1 var(--font-display); margin: 4px 0 6px; letter-spacing: -.01em; text-wrap: balance; }
+h1 .arrow { color: var(--route); padding: 0 2px; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--ink-2); font-size: 13px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); font-size: 12px; font-weight: 600; color: var(--ink-2);
+}
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--bus-a); box-shadow: 0 0 0 0 var(--bus-a); animation: pulse 2s infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--bus-a) 60%, transparent); } 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+.section-title { font: 600 12px/1 var(--font-body); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; }
+
+/* Bus cards */
+.buses { display: grid; gap: 8px; }
+.bus-card {
+  all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 6px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+}
+.bus-card:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; }
+.bus-card[aria-pressed="true"] { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); }
+.bus-top { display: flex; align-items: center; gap: 8px; }
+.bus-swatch { width: 22px; height: 22px; border-radius: 50%; background: var(--c); display: grid; place-items: center; flex: none; }
+.bus-swatch svg { width: 13px; height: 13px; }
+.bus-name { font: 700 15px/1.2 var(--font-display); }
+.bus-name small { font: 500 12px var(--font-body); color: var(--ink-3); margin-left: 4px; }
+.pill { margin-left: auto; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.moving { background: color-mix(in srgb, var(--bus-a) 16%, transparent); color: var(--bus-a); }
+.pill.stopped { background: color-mix(in srgb, var(--route) 16%, transparent); color: var(--route); }
+.pill.offline { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.bus-line { color: var(--ink-2); font-size: 13px; }
+.bus-line b { color: var(--ink); font-weight: 600; }
+.track { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.track i { display: block; height: 100%; background: var(--c); border-radius: 3px; }
+.bus-ends { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-3); }
+
+/* Stop timeline */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.tl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.tl-head h2 { font: 700 15px/1.2 var(--font-display); margin: 0; }
+.tl-head span { font-size: 12px; color: var(--ink-3); }
+.tl { list-style: none; margin: 0; padding: 0; }
+.tl li { display: grid; grid-template-columns: 28px 1fr auto; column-gap: 10px; }
+.tl-stop { align-items: center; min-height: 34px; }
+.tl-node { justify-self: center; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 3px solid var(--route); position: relative; z-index: 1; }
+.tl-stop.terminal .tl-node { width: 18px; height: 18px; }
+.tl-stop.passed .tl-node { border-color: var(--c); background: var(--c); }
+.tl-stop.here .tl-node { border-color: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent); }
+.tl-name { font-weight: 600; line-height: 1.25; }
+.tl-name .bn { font-size: 13px; margin-left: 4px; }
+.tl-stop.passed .tl-name { color: var(--ink-3); font-weight: 500; }
+.tl-eta { font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap; }
+.tl-eta.soon { color: var(--bus-a); }
+.tl-eta.muted { color: var(--ink-3); font-weight: 500; }
+.tl-seg { position: relative; height: var(--h, 44px); }
+.tl-rail { grid-column: 1; position: relative; justify-self: center; width: 4px; height: 100%; background: var(--line); border-radius: 2px; }
+.tl-fill { position: absolute; left: 0; right: 0; top: 0; height: calc(var(--p, 0) * 1%); background: var(--c); border-radius: 2px; }
+.tl-seg.done .tl-fill { height: 100%; }
+.tl-bus {
+  position: absolute; left: 50%; top: calc(var(--p, 0) * 1%); transform: translate(-50%, -50%);
+  width: 24px; height: 24px; border-radius: 50%; background: var(--c); border: 2px solid var(--surface);
+  display: grid; place-items: center; box-shadow: 0 1px 4px rgb(0 0 0 / .25); z-index: 2;
+}
+.tl-bus svg { width: 13px; height: 13px; }
+.tl-bus.offline { filter: grayscale(1); opacity: .6; }
+.tl-segtext { grid-column: 2 / 4; align-self: center; font-size: 12px; color: var(--ink-3); }
+
+/* Controls */
+.controls { display: grid; gap: 10px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { all: unset; cursor: pointer; padding: 5px 11px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--route); color: var(--surface); }
+.seg button:focus-visible, .btn:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; }
+.btn { all: unset; cursor: pointer; padding: 5px 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.btn[aria-pressed="true"] { border-color: var(--warn); color: var(--warn); }
+label.check { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+label.check input { accent-color: var(--route); width: 16px; height: 16px; margin: 0; }
+
+.how { font-size: 13px; color: var(--ink-2); }
+.how ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.how p { margin: 8px 0 0; font-size: 12px; color: var(--ink-3); }
+
+/* Map overlays */
+.map-badge {
+  position: absolute; top: 12px; left: 12px; z-index: 2;
+  background: var(--surface); color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px;
+  padding: 4px 10px; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgb(0 0 0 / .08);
+}
+/* No position here: MapLibre makes markers absolute, and overriding that stacks them. */
+.bm { width: 40px; height: 40px; cursor: pointer; }
+.bm-dir { position: absolute; inset: 0; transition: transform .4s linear; }
+.bm-body {
+  position: absolute; left: 6px; top: 6px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--c); border: 2.5px solid var(--surface); display: grid; place-items: center;
+  box-shadow: 0 2px 6px rgb(0 0 0 / .3);
+}
+.bm-body svg { width: 15px; height: 15px; }
+.bm-tag {
+  position: absolute; top: 38px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px;
+  padding: 0 5px; font: 700 11px/16px var(--font-body);
+}
+.bm.offline .bm-body, .bm.offline .bm-dir { filter: grayscale(1); opacity: .55; }
+.bm.offline .bm-tag { color: var(--warn); }
+
+.maplibregl-popup-content { background: var(--surface); color: var(--ink); border-radius: 10px; padding: 12px 14px; font: 13px/1.4 var(--font-body); box-shadow: 0 6px 20px rgb(0 0 0 / .18); }
+.maplibregl-popup-tip { border-top-color: var(--surface) !important; border-bottom-color: var(--surface) !important; }
+.maplibregl-popup-close-button { color: var(--ink-3); font-size: 18px; padding: 0 6px; }
+.pop h3 { margin: 0 0 2px; font: 700 14px var(--font-display); }
+.pop ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.pop li { display: flex; gap: 8px; align-items: center; }
+.pop .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.pop .eta { margin-left: auto; font-weight: 700; padding-left: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+  .bm-dir { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="panel" aria-label="Route information">
+    <header>
+      <div class="eyebrow">University of Barishal · Campus shuttle</div>
+      <h1>Campus <span class="arrow">↔</span> Rupatoli</h1>
+      <div class="meta">
+        <span>Route R1 · <span class="num" id="routeLen">3.3 km</span> · 5 stops</span>
+        <span class="chip"><span class="live-dot" aria-hidden="true"></span>Demo, simulated buses</span>
+        <span class="num" id="clock" title="Simulated Bangladesh time">07:42</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 class="section-title">Buses on this route</h2>
+      <div class="buses" id="busCards"></div>
+    </section>
+
+    <section class="card" id="timeline" aria-live="off"></section>
+
+    <section class="card controls" aria-label="Demo controls">
+      <h2 class="section-title" style="margin:0">Demo controls</h2>
+      <div class="row">
+        <span>Simulation speed</span>
+        <div class="seg" id="speedSeg" role="group" aria-label="Simulation speed">
+          <button type="button" data-mult="1" aria-pressed="false">1×</button>
+          <button type="button" data-mult="5" aria-pressed="true">5×</button>
+          <button type="button" data-mult="20" aria-pressed="false">20×</button>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="showPings"> Show raw GPS pings and how they snap to the road</label>
+      <div class="row">
+        <span>Test a bus losing network</span>
+        <button type="button" class="btn" id="cutSignal" aria-pressed="false">Cut BU-02 signal</button>
+      </div>
+    </section>
+
+    <section class="how">
+      <h2 class="section-title">How this demo works</h2>
+      <ol>
+        <li>The driver's phone sends a GPS point every 5 seconds.</li>
+        <li>The server snaps it onto the route line, which removes GPS jitter.</li>
+        <li>The server works out the next stop, speed and arrival times.</li>
+        <li>The app glides the bus along the road until the next point arrives.</li>
+      </ol>
+      <p>Here, steps 1–3 run inside this page with two simulated buses. The road, stops and map are real (OpenStreetMap). In your app, the points come from the drivers' phones through your server.</p>
+    </section>
+  </aside>
+
+  <main class="mapwrap">
+    <div id="map" role="region" aria-label="Map of route R1"></div>
+    <div class="map-badge">Tap a stop to see arrivals</div>
+  </main>
+</div>
+
+<script>
+/* ---------- Real data: route from OSRM over OpenStreetMap roads, campus gate → Rupatoli ---------- */
+const ROUTE = [[90.363432,22.659971],[90.363348,22.66094],[90.362798,22.660775],[90.362487,22.660683],[90.361868,22.66049],[90.361729,22.660445],[90.361349,22.660322],[90.361223,22.660282],[90.361084,22.660535],[90.36091,22.660782],[90.360719,22.66099],[90.360577,22.661128],[90.360405,22.661274],[90.36018,22.661418],[90.359981,22.661539],[90.359662,22.661688],[90.358864,22.662005],[90.357975,22.662343],[90.3571,22.662688],[90.351026,22.665027],[90.35079,22.665119],[90.350308,22.665298],[90.349812,22.665459],[90.349257,22.665602],[90.348536,22.665762],[90.347529,22.665975],[90.3471,22.666071],[90.346994,22.666074],[90.346606,22.666142],[90.346304,22.666189],[90.346309,22.666229],[90.346363,22.666649],[90.346419,22.667085],[90.346444,22.66729],[90.346472,22.667525],[90.346579,22.668407],[90.346658,22.668938],[90.34668,22.669094],[90.346767,22.669814],[90.346786,22.669996],[90.346818,22.67036],[90.346841,22.670943],[90.346846,22.67114],[90.346848,22.671291],[90.346851,22.671633],[90.34686,22.671986],[90.34683,22.672353],[90.346845,22.672867],[90.346847,22.673058],[90.346847,22.673417],[90.34685,22.673763],[90.346854,22.674081],[90.346857,22.674277],[90.346839,22.675168],[90.346828,22.676167],[90.346839,22.676546],[90.346835,22.676869],[90.346833,22.676983],[90.346836,22.677411],[90.346851,22.677796],[90.346895,22.678055]];
+
+const STOPS_RAW = [
+  { id: "campus", name: "University of Barishal", bn: "বরিশাল বিশ্ববিদ্যালয়", short: "Campus", ll: [90.363432, 22.659971], terminal: true },
+  { id: "karna",  name: "Karnakathi Junction",    bn: "কর্ণকাঠী",            ll: [90.36116, 22.6602] },
+  { id: "saown",  name: "Saown Filling Station",  bn: "সাওন ফিলিং স্টেশন",   ll: [90.34653, 22.66734] },
+  { id: "kathal", name: "Kathaltola",             bn: "কাঠালতলা",            ll: [90.34692, 22.67428] },
+  { id: "rupa",   name: "Rupatoli",               bn: "রূপাতলী",             short: "Rupatoli", ll: [90.346895, 22.678055], terminal: true },
+];
+const LANDMARK = { name: "Kirtankhola River, Serniabat Bridge", ll: [90.3540, 22.6633] };
+
+/* ---------- Geometry: flat metres around Barishal is accurate enough for a 3 km route ---------- */
+const LAT0 = 22.67, LNG0 = 90.35;
+const KX = Math.cos(LAT0 * Math.PI / 180) * 111320, KY = 110574;
+const xy = ([lng, lat]) => [(lng - LNG0) * KX, (lat - LAT0) * KY];
+const toLL = ([x, y]) => [x / KX + LNG0, y / KY + LAT0];
+const PTS = ROUTE.map(xy);
+const CUM = [0];
+for (let i = 1; i < PTS.length; i++) CUM.push(CUM[i - 1] + Math.hypot(PTS[i][0] - PTS[i - 1][0], PTS[i][1] - PTS[i - 1][1]));
+const L = CUM[CUM.length - 1];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+function alongXY(d) {
+  d = clamp(d, 0, L);
+  let i = 0;
+  while (i < CUM.length - 2 && CUM[i + 1] < d) i++;
+  const t = (d - CUM[i]) / ((CUM[i + 1] - CUM[i]) || 1);
+  return [PTS[i][0] + (PTS[i + 1][0] - PTS[i][0]) * t, PTS[i][1] + (PTS[i + 1][1] - PTS[i][1]) * t];
+}
+const along = d => toLL(alongXY(d));
+
+/* Snap a point to the nearest place on the route; returns metres along the route. */
+function snapXY(p) {
+  let best = { dist: Infinity, d: 0 };
+  for (let i = 0; i < PTS.length - 1; i++) {
+    const a = PTS[i], b = PTS[i + 1], dx = b[0] - a[0], dy = b[1] - a[1];
+    const len2 = dx * dx + dy * dy || 1;
+    const t = clamp(((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2, 0, 1);
+    const dist = Math.hypot(p[0] - (a[0] + dx * t), p[1] - (a[1] + dy * t));
+    if (dist < best.dist) best = { dist, d: CUM[i] + Math.sqrt(len2) * t };
+  }
+  return best;
+}
+function bearingAt(d, dir) {
+  const a = alongXY(d - 12), b = alongXY(d + 12);
+  let deg = Math.atan2(b[0] - a[0], b[1] - a[1]) * 180 / Math.PI;
+  if (dir < 0) deg += 180;
+  return (deg + 360) % 360;
+}
+
+const STOPS = STOPS_RAW.map(s => ({ ...s, d: snapXY(xy(s.ll)).d })).sort((a, b) => a.d - b.d);
+const LANDMARK_D = snapXY(xy(LANDMARK.ll)).d;
+/* Stops in travel order for a direction, with s = metres from that direction's start. */
+const ownStops = dir => STOPS.map(st => ({ ...st, s: dir > 0 ? st.d : L - st.d })).sort((a, b) => a.s - b.s);
+const STOPS_FWD = ownStops(1), STOPS_REV = ownStops(-1);
+const stopsFor = dir => dir > 0 ? STOPS_FWD : STOPS_REV;
+
+/* ---------- Simulation ---------- */
+const PING = 5;               // seconds between GPS points
+const OFFLINE_AFTER = 15;     // seconds without a point before we say "no signal"
+const AVG_SPEED = 6.0;        // m/s (~22 km/h) used for arrival estimates
+const DWELL_EST = 18;         // seconds assumed at each intermediate stop
+const SIM_START = 7 * 3600 + 42 * 60; // 07:42 Bangladesh time
+
+const BUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--on-bus)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="15" rx="2.5"/><path d="M5 11h14M8 18v2.5M16 18v2.5"/></svg>';
+
+const buses = [
+  { id: "BU-01", name: "Kirtankhola", colorVar: "--bus-a", dir: 1,  s: 120,  cruise: 7.5 },
+  { id: "BU-02", name: "Sandhya",     colorVar: "--bus-b", dir: -1, s: 1500, cruise: 6.8 },
+].map((b, i) => ({
+  ...b, v: 0, dwell: 0, cruiseT: 10, online: true,
+  nextPing: i * 2.5,
+  srv: { d: null, at: null, dir: b.dir, speed: 0 },  // what the server knows
+  cli: { d: null, dir: b.dir, anim: null },          // what the app is drawing
+  pings: [],
+}));
+
+let simNow = 0, mult = 5, selected = "BU-01";
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+
+/* The "real" bus: drives, slows for stops, waits, turns around at the ends. */
+function physics(b, h) {
+  if (b.dwell > 0) {
+    b.dwell -= h; b.v = 0;
+    if (b.dwell <= 0 && b.s >= L - 0.5) { b.dir *= -1; b.s = 0; }
+    return;
+  }
+  if ((b.cruiseT -= h) <= 0) { b.cruise = 5 + Math.random() * 4.5; b.cruiseT = 20 + Math.random() * 25; }
+  const next = stopsFor(b.dir).find(st => st.s > b.s + 0.5);
+  const dn = next ? next.s - b.s : 0;
+  const vmax = Math.min(b.cruise, Math.sqrt(2 * 0.7 * Math.max(dn, 0)) + 0.6);
+  b.v = b.v < vmax ? Math.min(vmax, b.v + 0.9 * h) : Math.max(vmax, b.v - 1.8 * h);
+  b.s += b.v * h;
+  if (next && b.s >= next.s - 0.3) {
+    b.s = next.s; b.v = 0;
+    b.dwell = next.terminal ? 40 : 12 + Math.random() * 12;
+  }
+}
+
+/* Driver phone → server: a noisy GPS point is snapped to the route. */
+function ping(b) {
+  if (!b.online) return;
+  const trueD = b.dir > 0 ? b.s : L - b.s;
+  const [x, y] = alongXY(trueD);
+  const raw = [x + gauss() * 7, y + gauss() * 7];
+  let d = snapXY(raw).d;
+  const sameTrip = b.srv.d != null && b.srv.dir === b.dir;
+  // Ignore small backwards jumps: a bus going one way does not reverse a few metres.
+  if (sameTrip && (d - b.srv.d) * b.dir < 0 && Math.abs(d - b.srv.d) < 30) d = b.srv.d;
+  const dt = b.srv.at != null ? Math.max(0.5, simNow - b.srv.at) : PING;
+  const sp = sameTrip ? Math.abs(d - b.srv.d) / dt : 0;
+  b.srv.speed = b.srv.speed * 0.4 + sp * 0.6;
+  b.srv.d = d; b.srv.at = simNow; b.srv.dir = b.dir;
+  b.pings.push({ raw: toLL(raw), snap: along(d), at: simNow });
+  if (b.pings.length > 10) b.pings.shift();
+  // Server → app: glide from where the bus is drawn now to the new point over one ping interval.
+  const from = b.cli.d ?? d;
+  b.cli.anim = { from, to: d, start: simNow, dur: PING };
+  b.cli.dir = b.dir;
+  if (b.cli.d == null) b.cli.d = d;
+}
+
+function stepSim(h) {
+  for (const b of buses) {
+    physics(b, h);
+    if (simNow >= b.nextPing) { ping(b); b.nextPing += PING; }
+  }
+}
+
+/* What the app shows, worked out only from server data (never the hidden "true" position). */
+function info(b) {
+  if (b.srv.d == null) return null;
+  const dir = b.srv.dir, own = stopsFor(dir);
+  const sOwn = dir > 0 ? b.srv.d : L - b.srv.d;
+  const ago = simNow - b.srv.at;
+  const offline = ago > OFFLINE_AFTER;
+  const atStop = own.find(st => Math.abs(st.s - sOwn) < 20 && b.srv.speed < 1.2);
+  let nextIdx = own.findIndex(st => st.s > sOwn + 20);
+  const etas = own.map((st, i) => {
+    if (nextIdx < 0 || i < nextIdx) return null;
+    return (st.s - sOwn) / AVG_SPEED + (i - nextIdx) * DWELL_EST;
+  });
+  const cliOwn = b.cli.d == null ? sOwn : (b.cli.dir > 0 ? b.cli.d : L - b.cli.d);
+  return { dir, own, sOwn, cliOwn, ago, offline, atStop, nextIdx, etas, dest: own[own.length - 1], origin: own[0], kmh: Math.round(b.srv.speed * 3.6) };
+}
+
+const fmtEta = s => s == null ? "" : s < 45 ? "Arriving" : `${Math.max(1, Math.round(s / 60))} min`;
+const fmtAgo = s => s < 60 ? `${Math.round(s)} s` : `${Math.round(s / 60)} min`;
+const stopName = st => st.short || st.name;
+const cssVar = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+/* ---------- Panel ---------- */
+const $cards = document.getElementById("busCards");
+const $tl = document.getElementById("timeline");
+let lastCards = "", lastTl = "";
+
+function statusOf(b, inf) {
+  if (!inf) return { cls: "stopped", text: "Starting" };
+  if (inf.offline) return { cls: "offline", text: "No signal" };
+  if (inf.atStop) return { cls: "stopped", text: "At stop" };
+  return { cls: "moving", text: `${inf.kmh} km/h` };
+}
+
+function renderCards() {
+  const html = buses.map(b => {
+    const inf = info(b), st = statusOf(b, inf);
+    let line = "Waiting for first GPS point…", pct = 0, ends = ["", ""];
+    if (inf) {
+      pct = Math.round(inf.cliOwn / L * 100);
+      ends = [stopName(inf.origin), stopName(inf.dest)];
+      if (inf.offline) line = `Last seen ${fmtAgo(inf.ago)} ago near <b>${stopName(inf.own[Math.max(0, inf.nextIdx - 1)] || inf.dest)}</b>`;
+      else if (inf.nextIdx < 0) line = `At <b>${stopName(inf.dest)}</b>, turning around`;
+      else if (inf.atStop) line = `At <b>${stopName(inf.atStop)}</b> · next <b>${stopName(inf.own[inf.nextIdx])}</b> ${fmtEta(inf.etas[inf.nextIdx]).toLowerCase()}`;
+      else line = `Next <b>${stopName(inf.own[inf.nextIdx])}</b> · ${fmtEta(inf.etas[inf.nextIdx])}`;
+    }
+    return `<button type="button" class="bus-card" data-bus="${b.id}" aria-pressed="${b.id === selected}" style="--c: var(${b.colorVar})">
+      <div class="bus-top"><span class="bus-swatch">${BUS_SVG}</span>
+        <span class="bus-name">${b.id}<small>${b.name}</small></span>
+        <span class="pill ${st.cls} num">${st.text}</span></div>
+      <div class="bus-line">${inf ? `To <b>${stopName(inf.dest)}</b> · ` : ""}${line}</div>
+      <div class="track" aria-hidden="true"><i style="width:${pct}%"></i></div>
+      <div class="bus-ends"><span>${ends[0]}</span><span>${ends[1]}</span></div>
+    </button>`;
+  }).join("");
+  if (html !== lastCards) { $cards.innerHTML = html; lastCards = html; }
+}
+
+function renderTimeline() {
+  const b = buses.find(x => x.id === selected), inf = info(b);
+  if (!inf) return;
+  const own = inf.own;
+  // Which gap between stops the drawn bus is in.
+  let seg = own.findIndex((st, i) => i < own.length - 1 && inf.cliOwn >= st.s && inf.cliOwn < own[i + 1].s);
+  let rows = "";
+  own.forEach((st, i) => {
+    const passed = inf.nextIdx >= 0 ? i < inf.nextIdx && !(inf.atStop && inf.atStop.id === st.id) : i < own.length - 1;
+    const here = inf.atStop && inf.atStop.id === st.id && !inf.offline;
+    const eta = inf.etas[i];
+    const etaTxt = here ? "Here now" : passed ? "Passed" : fmtEta(eta);
+    const etaCls = here || (eta != null && eta < 120) ? "soon" : passed ? "muted" : "";
+    rows += `<li class="tl-stop ${st.terminal ? "terminal" : ""} ${passed ? "passed" : ""} ${here ? "here" : ""}">
+      <span class="tl-node"></span>
+      <div class="tl-name">${st.name}<span class="bn">${st.bn}</span></div>
+      <div class="tl-eta num ${etaCls}">${etaTxt}</div></li>`;
+    if (i < own.length - 1) {
+      const next = own[i + 1], dist = next.s - st.s;
+      const h = clamp(Math.round(dist / 16), 30, 110);
+      const lmS = inf.dir > 0 ? LANDMARK_D : L - LANDMARK_D;
+      const lm = lmS > st.s && lmS < next.s ? `${LANDMARK.name} · ` : "";
+      const done = seg > i || (seg < 0 && inf.cliOwn >= next.s);
+      const active = seg === i && !here;
+      rows += `<li class="tl-seg ${done ? "done" : ""}" style="--h:${h}px" data-seg="${i}">
+        <span class="tl-rail"><span class="tl-fill"></span>${active ? `<span class="tl-bus ${inf.offline ? "offline" : ""}" aria-label="${b.id} is here">${BUS_SVG}</span>` : ""}</span>
+        <div class="tl-segtext num">${lm}${(dist / 1000).toFixed(dist < 1000 ? 2 : 1)} km</div></li>`;
+    }
+  });
+  const html = `<div class="tl-head"><h2>${b.id} stops</h2><span>${stopName(inf.origin)} → ${stopName(inf.dest)}</span></div>
+    <ol class="tl" style="--c: var(${b.colorVar})">${rows}</ol>`;
+  if (html !== lastTl) { $tl.innerHTML = html; lastTl = html; }
+  // Move the timeline bus every frame without rebuilding the list.
+  if (seg >= 0) {
+    const li = $tl.querySelector(`[data-seg="${seg}"]`);
+    if (li) li.style.setProperty("--p", ((inf.cliOwn - own[seg].s) / (own[seg + 1].s - own[seg].s) * 100).toFixed(1));
+  }
+}
+
+$cards.addEventListener("click", e => {
+  const card = e.target.closest("[data-bus]");
+  if (!card) return;
+  selected = card.dataset.bus;
+  const b = buses.find(x => x.id === selected);
+  if (b.cli.d != null) map.easeTo({ center: along(b.cli.d), zoom: Math.max(map.getZoom(), 15.5), duration: 700 });
+  lastCards = ""; renderCards(); renderTimeline();
+});
+
+document.getElementById("speedSeg").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-mult]");
+  if (!btn) return;
+  mult = +btn.dataset.mult;
+  document.querySelectorAll("#speedSeg button").forEach(x => x.setAttribute("aria-pressed", x === btn));
+});
+
+const $cut = document.getElementById("cutSignal");
+$cut.addEventListener("click", () => {
+  const b = buses[1];
+  b.online = !b.online;
+  $cut.setAttribute("aria-pressed", !b.online);
+  $cut.textContent = b.online ? "Cut BU-02 signal" : "Restore BU-02 signal";
+});
+
+const $pings = document.getElementById("showPings");
+$pings.addEventListener("change", () => setPingVisibility());
+
+document.getElementById("routeLen").textContent = (L / 1000).toFixed(1) + " km";
+
+/* ---------- Map ---------- */
+const STYLES = {
+  light: "https://tiles.openfreemap.org/styles/positron",
+  dark: "https://tiles.openfreemap.org/styles/dark",
+};
+const darkMQ = matchMedia("(prefers-color-scheme: dark)");
+const bounds = ROUTE.reduce((bb, c) => bb.extend(c), new maplibregl.LngLatBounds(ROUTE[0], ROUTE[0]));
+
+const map = new maplibregl.Map({
+  container: "map",
+  style: darkMQ.matches ? STYLES.dark : STYLES.light,
+  bounds,
+  fitBoundsOptions: { padding: { top: 60, bottom: 60, left: 50, right: 50 } },
+  attributionControl: { compact: true },
+});
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+map.dragRotate.disable();
+map.touchZoomRotate.disableRotation();
+
+// Keep the whole route in view when the window changes size, until the user moves the map.
+let userMoved = false;
+map.on("dragstart", () => { userMoved = true; });
+map.on("zoomstart", e => { if (e.originalEvent) userMoved = true; });
+const fitRoute = () => map.fitBounds(bounds, { padding: 48, maxZoom: 16, duration: 0 });
+map.once("load", fitRoute);
+new ResizeObserver(() => { map.resize(); if (!userMoved) fitRoute(); }).observe(document.getElementById("map"));
+
+function addOverlays() {
+  if (map.getSource("route")) return;
+  const surface = cssVar("--surface"), route = cssVar("--route"), ink = cssVar("--ink");
+  map.addSource("route", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: ROUTE } } });
+  map.addLayer({ id: "route-casing", type: "line", source: "route", layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": surface, "line-width": ["interpolate", ["linear"], ["zoom"], 12, 7, 17, 15] } });
+  map.addLayer({ id: "route-line", type: "line", source: "route", layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": route, "line-width": ["interpolate", ["linear"], ["zoom"], 12, 3.5, 17, 8] } });
+
+  map.addSource("pings", { type: "geojson", data: pingGeoJSON() });
+  map.addLayer({ id: "ping-link", type: "line", source: "pings", filter: ["==", ["geometry-type"], "LineString"],
+    paint: { "line-color": ["get", "color"], "line-width": 1.5, "line-dasharray": [2, 2], "line-opacity": ["get", "op"] } });
+  map.addLayer({ id: "ping-dot", type: "circle", source: "pings", filter: ["==", ["geometry-type"], "Point"],
+    paint: { "circle-radius": 4, "circle-color": ["get", "color"], "circle-opacity": ["get", "op"], "circle-stroke-color": surface, "circle-stroke-width": 1, "circle-stroke-opacity": ["get", "op"] } });
+
+  map.addSource("stops", { type: "geojson", data: { type: "FeatureCollection", features: STOPS.map(s => ({
+    type: "Feature", properties: { id: s.id, name: s.name, terminal: !!s.terminal }, geometry: { type: "Point", coordinates: along(s.d) } })) } });
+  map.addLayer({ id: "stop-dot", type: "circle", source: "stops",
+    paint: { "circle-radius": ["case", ["get", "terminal"], 8, 6], "circle-color": surface, "circle-stroke-color": route, "circle-stroke-width": 3 } });
+  map.addLayer({ id: "stop-label", type: "symbol", source: "stops",
+    layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Bold"], "text-size": ["case", ["get", "terminal"], 13, 12],
+      "text-variable-anchor": ["left", "right", "top", "bottom"], "text-radial-offset": 1.1, "text-justify": "auto" },
+    paint: { "text-color": ink, "text-halo-color": surface, "text-halo-width": 1.6 } });
+  setPingVisibility();
+}
+map.on("style.load", addOverlays);
+
+darkMQ.addEventListener("change", e => {
+  map.setStyle(e.matches ? STYLES.dark : STYLES.light, { diff: false });
+});
+
+function pingGeoJSON() {
+  const features = [];
+  for (const b of buses) {
+    const color = cssVar(b.colorVar);
+    for (const p of b.pings) {
+      const op = clamp(1 - (simNow - p.at) / 50, 0.1, 1);
+      features.push({ type: "Feature", properties: { color, op }, geometry: { type: "Point", coordinates: p.raw } });
+      features.push({ type: "Feature", properties: { color, op }, geometry: { type: "LineString", coordinates: [p.raw, p.snap] } });
+    }
+  }
+  return { type: "FeatureCollection", features };
+}
+function setPingVisibility() {
+  const vis = $pings.checked ? "visible" : "none";
+  for (const id of ["ping-link", "ping-dot"]) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
+}
+
+/* Stop popup with arrivals */
+map.on("mouseenter", "stop-dot", () => map.getCanvas().style.cursor = "pointer");
+map.on("mouseleave", "stop-dot", () => map.getCanvas().style.cursor = "");
+map.on("click", "stop-dot", e => {
+  const id = e.features[0].properties.id;
+  const st = STOPS.find(s => s.id === id);
+  const items = buses.map(b => {
+    const inf = info(b);
+    if (!inf) return "";
+    const idx = inf.own.findIndex(s => s.id === id);
+    let eta;
+    if (inf.atStop && inf.atStop.id === id) eta = "Here now";
+    else if (inf.etas[idx] != null) eta = fmtEta(inf.etas[idx]);
+    else return "";
+    return `<li style="--c: var(${b.colorVar})"><span class="dot"></span>${b.id} to ${stopName(inf.dest)}<span class="eta num">${eta}${inf.offline ? " ?" : ""}</span></li>`;
+  }).join("");
+  new maplibregl.Popup({ offset: 12, maxWidth: "260px" })
+    .setLngLat(along(st.d))
+    .setHTML(`<div class="pop"><h3>${st.name}</h3><div class="bn">${st.bn}</div>
+      <ul>${items || "<li>No bus heading here right now</li>"}</ul></div>`)
+    .addTo(map);
+});
+
+/* Bus markers (HTML, so they survive style changes) */
+for (const b of buses) {
+  const el = document.createElement("div");
+  el.className = "bm";
+  el.style.setProperty("--c", `var(${b.colorVar})`);
+  el.innerHTML = `<div class="bm-dir"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 0 L26.5 9.5 H13.5 Z" fill="var(--c)"/></svg></div>
+    <div class="bm-body">${BUS_SVG}</div><div class="bm-tag">${b.id}</div>`;
+  el.addEventListener("click", ev => { ev.stopPropagation(); selected = b.id; lastCards = ""; renderCards(); renderTimeline(); });
+  b.el = el;
+  b.dirEl = el.querySelector(".bm-dir");
+  b.marker = new maplibregl.Marker({ element: el, anchor: "center" });
+}
+
+/* ---------- Main loop ---------- */
+let last = performance.now(), panelAcc = 0, pingAcc = 0;
+// Warm up a few seconds so both buses have a position when the page opens.
+for (let t = 0; t < 6; t += 0.25) { stepSim(0.25); simNow += 0.25; }
+
+function frame(now) {
+  const dtReal = Math.min(0.1, (now - last) / 1000);
+  last = now;
+  let rem = dtReal * mult;
+  while (rem > 0) { const h = Math.min(rem, 0.25); stepSim(h); simNow += h; rem -= h; }
+
+  for (const b of buses) {
+    const a = b.cli.anim;
+    if (a) b.cli.d = a.from + (a.to - a.from) * (reduceMotion ? 1 : clamp((simNow - a.start) / a.dur, 0, 1));
+    if (b.cli.d == null) continue;
+    b.marker.setLngLat(along(b.cli.d));
+    if (!b.marker._map) b.marker.addTo(map);
+    b.dirEl.style.transform = `rotate(${bearingAt(b.cli.d, b.cli.dir) - map.getBearing()}deg)`;
+    const inf = info(b);
+    b.el.classList.toggle("offline", !!(inf && inf.offline));
+  }
+
+  panelAcc += dtReal; pingAcc += dtReal;
+  if (panelAcc > 0.25) { panelAcc = 0; renderCards(); }
+  renderTimeline();
+  if (pingAcc > 0.5 && map.getSource("pings")) { pingAcc = 0; map.getSource("pings").setData(pingGeoJSON()); }
+
+  const t = SIM_START + simNow;
+  document.getElementById("clock").textContent =
+    `${String(Math.floor(t / 3600) % 24).padStart(2, "0")}:${String(Math.floor(t / 60) % 60).padStart(2, "0")}:${String(Math.floor(t) % 60).padStart(2, "0")}`;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

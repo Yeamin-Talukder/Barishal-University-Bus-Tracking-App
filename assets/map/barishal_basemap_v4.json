@@ -1,0 +1,43 @@
+{
+  "file": "barishal_basemap_v4.pmtiles",
+  "bytes": 1997710,
+  "sha256": "c39e703c21d0694d654130bf20a118545593e12f506226846b1c0be6335b5a49",
+  "sourceBuild": "20261110.pmtiles",
+  "schemaVersion": "4.15.2",
+  "minZoom": 8,
+  "maxZoom": 15,
+  "tileCount": 108,
+  "tilesPerZoom": {
+    "8": 1,
+    "9": 2,
+    "10": 4,
+    "11": 6,
+    "12": 6,
+    "13": 11,
+    "14": 23,
+    "15": 55
+  },
+  "coverageTilesPerZoom": {
+    "8": 1,
+    "9": 1,
+    "10": 2,
+    "11": 2,
+    "12": 4,
+    "13": 6,
+    "14": 15,
+    "15": 44
+  },
+  "edgeMarginPixels": 250,
+  "routeBufferMeters": 1500.0,
+  "bounds": {
+    "south": 22.643,
+    "west": 90.331,
+    "north": 22.727,
+    "east": 90.385
+  },
+  "center": {
+    "latitude": 22.659967,
+    "longitude": 90.363381
+  },
+  "attribution": "\u00a9 OpenStreetMap contributors, Protomaps"
+}

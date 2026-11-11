@@ -1,0 +1,205 @@
+rules_version = '2';
+
+// Cloud Firestore security rules for the University of Barishal Bus Tracker.
+//
+// Principles:
+//  - Nothing is readable or writable unless a rule below allows it.
+//  - Passengers need no account. Routes, stops, buses, the order of stops,
+//    the schedule and announcements are public and can be read by anyone. Nothing else
+//    can be read without signing in, and nothing at all can be written
+//    without signing in.
+//  - A role is whatever the user's own document says, and a user can never
+//    write that field. Hiding a button in the app is not security.
+//  - Trips are written only by Cloud Functions (the Admin SDK ignores these
+//    rules), never by a client.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Signed in, with a profile that has not been deactivated.
+    function isActiveUser() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && profile().isActive == true;
+    }
+
+    function isAdmin() {
+      return isActiveUser() && profile().role == 'admin';
+    }
+
+    function isValidRole(role) {
+      return role in ['student', 'driver', 'admin'];
+    }
+
+    function isShortText(value, max) {
+      return value is string && value.size() > 0 && value.size() <= max;
+    }
+
+    function isLatitude(value) {
+      return value is number && value >= -90 && value <= 90;
+    }
+
+    function isLongitude(value) {
+      return value is number && value >= -180 && value <= 180;
+    }
+
+    // ---- users/{uid} ----------------------------------------------------
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+
+      // A person creates their own profile once, and only as an active
+      // student. Drivers and admins are promoted afterwards by an admin.
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(
+             ['name', 'email', 'studentId', 'role', 'isActive', 'createdAt'])
+        && request.resource.data.keys().hasAll(
+             ['name', 'email', 'role', 'isActive', 'createdAt'])
+        && isShortText(request.resource.data.name, 80)
+        && request.resource.data.email == request.auth.token.email
+        && (!('studentId' in request.resource.data)
+            || (request.resource.data.studentId is string
+                && request.resource.data.studentId.size() <= 30))
+        && request.resource.data.role == 'student'
+        && request.resource.data.isActive == true
+        && request.resource.data.createdAt == request.time;
+
+      // The owner may correct their name and student id, nothing else.
+      // An admin may also change the role and deactivate the account.
+      allow update: if signedIn()
+        && isShortText(request.resource.data.name, 80)
+        && (!('studentId' in request.resource.data)
+            || (request.resource.data.studentId is string
+                && request.resource.data.studentId.size() <= 30))
+        && (
+          (request.auth.uid == uid
+            && isActiveUser()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['name', 'studentId']))
+          ||
+          (isAdmin()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['name', 'studentId', 'role', 'isActive'])
+            && isValidRole(request.resource.data.role)
+            && request.resource.data.isActive is bool)
+        );
+
+      allow delete: if false;
+    }
+
+    // ---- buses/{busId} --------------------------------------------------
+    match /buses/{busId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(
+             ['busNumber', 'name', 'registrationNumber', 'routeId',
+              'driverUid', 'isActive'])
+        && isShortText(request.resource.data.busNumber, 20)
+        && isShortText(request.resource.data.name, 80)
+        && request.resource.data.isActive is bool
+        && (request.resource.data.get('registrationNumber', null) == null
+            || request.resource.data.registrationNumber is string)
+        && (request.resource.data.get('routeId', null) == null
+            || request.resource.data.routeId is string)
+        && (request.resource.data.get('driverUid', null) == null
+            || request.resource.data.driverUid is string);
+      allow delete: if isAdmin();
+    }
+
+    // ---- routes/{routeId} -----------------------------------------------
+    match /routes/{routeId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(
+             ['name', 'color', 'startLocation', 'endLocation', 'path',
+              'stopIds', 'isActive'])
+        && isShortText(request.resource.data.name, 80)
+        && request.resource.data.color.matches('^#[0-9A-Fa-f]{6}$')
+        && request.resource.data.isActive is bool
+        // The path is a list of {latitude, longitude} points.
+        && request.resource.data.path is list
+        && request.resource.data.path.size() >= 2
+        && request.resource.data.path.size() <= 5000
+        // The ids of the stops along the route, in order.
+        && (!('stopIds' in request.resource.data)
+            || (request.resource.data.stopIds is list
+                && request.resource.data.stopIds.size() <= 60));
+      allow delete: if isAdmin();
+    }
+
+    // ---- stops/{stopId} -------------------------------------------------
+    match /stops/{stopId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(
+             ['name', 'latitude', 'longitude', 'description'])
+        && isShortText(request.resource.data.name, 80)
+        && isLatitude(request.resource.data.latitude)
+        && isLongitude(request.resource.data.longitude)
+        && (request.resource.data.get('description', null) == null
+            || request.resource.data.description is string);
+      allow delete: if isAdmin();
+    }
+
+    // ---- routeStops/{routeStopId} ---------------------------------------
+    match /routeStops/{routeStopId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(
+             ['routeId', 'stopId', 'sequence'])
+        && request.resource.data.routeId is string
+        && request.resource.data.stopId is string
+        && request.resource.data.sequence is int
+        && request.resource.data.sequence >= 0;
+      allow delete: if isAdmin();
+    }
+
+    // ---- timetables/{timetableId} ---------------------------------------
+    // The bus schedule: one document per route and passenger group.
+    match /timetables/{timetableId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(
+             ['group', 'route', 'stops', 'departures', 'updatedAt'])
+        && request.resource.data.keys().hasAll(
+             ['group', 'route', 'stops', 'departures', 'updatedAt'])
+        && request.resource.data.group in ['student', 'teacher', 'staff']
+        && isShortText(request.resource.data.route, 10)
+        && request.resource.data.stops is list
+        && request.resource.data.stops.size() <= 60
+        && request.resource.data.departures is list
+        && request.resource.data.departures.size() >= 1
+        && request.resource.data.departures.size() <= 12
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+
+    // ---- trips/{tripId} -------------------------------------------------
+    // Created and ended only by the startTrip and endTrip Cloud Functions.
+    match /trips/{tripId} {
+      allow read: if isAdmin()
+        || (isActiveUser() && resource.data.driverUid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // ---- announcements/{announcementId} ---------------------------------
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(
+             ['title', 'message', 'createdAt', 'isActive'])
+        && isShortText(request.resource.data.title, 120)
+        && isShortText(request.resource.data.message, 2000)
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.isActive is bool;
+      allow delete: if isAdmin();
+    }
+  }
+}

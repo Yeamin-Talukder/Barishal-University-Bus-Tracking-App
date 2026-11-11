@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en" class="no-js" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>BU Bus Tracker – University of Barishal Bus Schedule App</title>
+  <meta name="description" content="Free app for University of Barishal buses: official schedules for students, teachers and staff, every stop and an offline map. Live tracking coming soon.">
+  <meta name="keywords" content="University of Barishal bus, BU bus schedule, Barishal University bus tracker, BU bus app, Barishal bus map, বরিশাল বিশ্ববিদ্যালয় বাস, ববি বাসের সময়সূচি, বাস ট্র্যাকার">
+  <link rel="canonical" href="{{SITE_URL}}">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="application-name" content="BU Bus Tracker">
+  <meta name="apple-mobile-web-app-title" content="BU Bus">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B1115">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2F5F7">
+
+  <!-- Link previews (Facebook, WhatsApp, Messenger, LinkedIn, X) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="BU Bus Tracker">
+  <meta property="og:title" content="BU Bus Tracker – University of Barishal buses, on the map">
+  <meta property="og:description" content="Official bus schedules, every stop and an offline map of Barishal in one free app. Live bus tracking is coming soon.">
+  <meta property="og:url" content="{{SITE_URL}}">
+  <meta property="og:image" content="{{SITE_URL}}assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="BU Bus Tracker app showing bus routes on a map of the University of Barishal">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="bn_BD">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BU Bus Tracker – University of Barishal buses, on the map">
+  <meta name="twitter:description" content="Official bus schedules, every stop and an offline map of Barishal in one free app.">
+  <meta name="twitter:image" content="{{SITE_URL}}assets/og-image.png">
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/styles.css?v={{BUILD_ID}}">
+  <link rel="preload" as="image" href="assets/screens/map-dark.webp" type="image/webp">
+
+  <script>
+    // Set the theme before the page paints, so there is no flash.
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('bubt-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') {
+        t = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.classList.remove('no-js');
+    })();
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "{{SITE_URL}}#website",
+        "url": "{{SITE_URL}}",
+        "name": "BU Bus Tracker",
+        "alternateName": ["University of Barishal Bus Tracker", "বিইউ বাস ট্র্যাকার"],
+        "inLanguage": ["en", "bn"]
+      },
+      {
+        "@type": "MobileApplication",
+        "@id": "{{SITE_URL}}#app",
+        "name": "BU Bus Tracker",
+        "alternateName": "University of Barishal Bus Tracker",
+        "description": "Bus schedules, stops and an offline map for University of Barishal students, teachers and staff. Live bus tracking is in testing.",
+        "url": "{{SITE_URL}}",
+        "image": "{{SITE_URL}}assets/icons/icon-512.png",
+        "screenshot": [
+          "{{SITE_URL}}assets/screens/map-light.webp",
+          "{{SITE_URL}}assets/screens/schedule.webp",
+          "{{SITE_URL}}assets/screens/stops.webp"
+        ],
+        "operatingSystem": "Android 7.0 or later",
+        "applicationCategory": "TravelApplication",
+        "inLanguage": ["en", "bn"],
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BDT" },
+        "featureList": [
+          "Offline map of the University of Barishal bus routes",
+          "Official bus schedule for students, teachers and staff",
+          "Bus routes and stops on the map",
+          "Bangla and English names",
+          "Light and dark map with 3D buildings",
+          "No account needed for passengers"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "{{SITE_URL}}#faq",
+        "mainEntity": [
+          { "@type": "Question", "name": "Is BU Bus Tracker free?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. The app is free, has no ads and needs no payment of any kind." } },
+          { "@type": "Question", "name": "Do I need an account?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. Students, teachers and staff can use everything without signing in. Only bus drivers and transport office staff sign in, with their Google account." } },
+          { "@type": "Question", "name": "Does it work without internet?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. The map, the bus schedule and the stops are stored on your phone, so they work with no connection. Live bus positions, once available, need a connection." } },
+          { "@type": "Question", "name": "When will live bus tracking be available?",
+            "acceptedAnswer": { "@type": "Answer", "text": "It is built and being tested now, and will be switched on for everyone once it has been tried on real buses. New versions are published on the download page and on GitHub." } },
+          { "@type": "Question", "name": "Which routes are included?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Student routes 01 to 03, teacher routes 04 to 07 and staff routes 04, 05, 06 and 08, taken from the university's official bus schedule." } },
+          { "@type": "Question", "name": "Does the app track my location?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. If you allow it, your location is only used to show where you are on your own map, and it is not uploaded. Bus positions come from the driver's phone during a trip." } },
+          { "@type": "Question", "name": "Is there an iPhone version?",
+            "acceptedAnswer": { "@type": "Answer", "text": "It is planned. The app is built with Flutter, which runs on iPhone too, but the iPhone version still has to be built and tested on a Mac." } },
+          { "@type": "Question", "name": "অ্যাপটি কি বিনামূল্যে?",
+            "acceptedAnswer": { "@type": "Answer", "text": "হ্যাঁ। অ্যাপটি সম্পূর্ণ বিনামূল্যে, কোনো বিজ্ঞাপন নেই, আর যাত্রীদের কোনো অ্যাকাউন্ট খুলতে হয় না।" } },
+          { "@type": "Question", "name": "ইন্টারনেট ছাড়া কি অ্যাপটি চলে?",
+            "acceptedAnswer": { "@type": "Answer", "text": "হ্যাঁ। ম্যাপ, বাসের সময়সূচি আর স্টপেজগুলো ফোনেই রাখা থাকে, তাই ইন্টারনেট ছাড়াও দেখা যায়।" } }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <script src="js/config.js?v={{BUILD_ID}}" defer></script>
+  <script src="js/main.js?v={{BUILD_ID}}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- Icon set (24 x 24, stroke icons draw with currentColor) -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></symbol>
+      <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="m2 2 20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 12.9a10 10 0 0 1 5.2-2.8"/><path d="M19 12.9a10 10 0 0 0-2.3-1.6"/><path d="M2 8.8a15 15 0 0 1 4.2-2.6"/><path d="M22 8.8A15 15 0 0 0 10.7 5"/><path d="M12 20h.01"/></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 18h2"/></symbol>
+      <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+      <symbol id="i-building" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-4h6v4"/><path d="M9 10h.01M15 10h.01M9 13.5h.01M15 13.5h.01"/></symbol>
+      <symbol id="i-user-check" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></symbol>
+      <symbol id="i-languages" viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></symbol>
+      <symbol id="i-radio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19.1 4.9a10 10 0 0 1 0 14.2M4.9 19.1a10 10 0 0 1 0-14.2"/></symbol>
+      <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="14" r="8"/><path d="M12 10v4l2.5 2M9 2h6"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+      <symbol id="i-bus" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 14.5h.01M16 14.5h.01M7 18v3M17 18v3"/></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 2.5 3 6.1 6.7 1-4.9 4.7 1.2 6.7-6-3.2-6 3.2 1.2-6.7-4.9-4.7 6.7-1z"/></symbol>
+      <symbol id="i-fork" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="12" cy="19" r="2.5"/><path d="M6 7.5v1a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3v-1M12 11.5v5"/></symbol>
+      <symbol id="i-bug" viewBox="0 0 24 24"><path d="m8 2 1.9 1.9M16 2l-1.9 1.9"/><path d="M9 7.1V6a3 3 0 1 1 6 0v1.1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6z"/><path d="M12 20v-9M6.5 13H3M21 13h-3.5M6 9 3.5 7M18 9l2.5-2M6 17l-2.5 2M18 17l2.5 2"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+      <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+      <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></symbol>
+      <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></symbol>
+      <symbol id="i-drive" viewBox="0 0 24 24"><path d="M22 12H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/><path d="M6 16h.01M10 16h.01"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5z"/></symbol>
+      <symbol id="i-android" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="m17.6 9.5 1.7-2.9a.4.4 0 1 0-.7-.4l-1.7 3a10.4 10.4 0 0 0-4.9-1c-1.8 0-3.4.4-4.9 1l-1.7-3a.4.4 0 1 0-.7.4l1.7 2.9A9.8 9.8 0 0 0 1.5 17h21a9.8 9.8 0 0 0-4.9-7.5zM7 14.4a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm10 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></symbol>
+      <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h4v4h-4z"/></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></symbol>
+      <!-- The app icon's pin and bus, for the animated hero map -->
+      <symbol id="bus-pin" viewBox="232 110 560 760">
+        <path d="M292.8 574.2 A280 280 0 1 1 731.2 574.2 L529.4 828.1 Q512 850 494.6 828.1 Z" fill="#2FB79A"/>
+        <g transform="translate(512 400) scale(0.9) translate(-512 -428)" fill="#fff">
+          <path fill-rule="evenodd" d="M442 258h140a62 62 0 0 1 62 62v182a62 62 0 0 1-62 62H442a62 62 0 0 1-62-62V320a62 62 0 0 1 62-62zM440 294a26 26 0 0 0-26 26v34a26 26 0 0 0 26 26h144a26 26 0 0 0 26-26v-34a26 26 0 0 0-26-26zM440 406a26 26 0 0 0-26 26v42a26 26 0 0 0 26 26h144a26 26 0 0 0 26-26v-42a26 26 0 0 0-26-26z"/>
+          <rect x="408" y="540" width="56" height="58" rx="18"/><rect x="560" y="540" width="56" height="58" rx="18"/>
+        </g>
+      </symbol>
+    </defs>
+  </svg>
+
+  <header class="site-header" id="top">
+    <div class="container nav">
+      <a class="brand" href="#top" aria-label="BU Bus Tracker, back to top">
+        <img src="assets/icons/apple-touch-icon.png" alt="" width="36" height="36">
+        <span>BU Bus Tracker</span>
+      </a>
+      <nav class="nav-links" id="site-nav" aria-label="Main">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#screens">Screens</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#faq">FAQ</a>
+        <a class="nav-gh" data-gh-link="repo" href="#open-source"><svg class="i"><use href="#i-github"/></svg><span>GitHub</span></a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-btn theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
+          <svg class="i i-sun"><use href="#i-sun"/></svg>
+          <svg class="i i-moon"><use href="#i-moon"/></svg>
+        </button>
+        <a class="btn btn-primary btn-sm" href="#download"><svg class="i"><use href="#i-download"/></svg><span>Download</span></a>
+        <button class="icon-btn menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-nav">
+          <svg class="i i-open"><use href="#i-menu"/></svg>
+          <svg class="i i-close"><use href="#i-x"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-bg" aria-hidden="true">
+        <div class="glow glow-red"></div>
+        <div class="glow glow-river"></div>
+        <div class="grid-lines"></div>
+      </div>
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <p class="status-pill reveal"><span class="live-dot"></span>Early access · live tracking is in testing</p>
+          <h1 id="hero-title" class="reveal" style="--d:80ms">Your University of Barishal bus, <span class="grad">on the map.</span></h1>
+          <p class="lead reveal" style="--d:160ms">Bus schedules for students, teachers and staff, every stop, and an offline map of Barishal, in one free app. Live bus tracking is being tested now.</p>
+          <p class="lead-bn reveal" lang="bn" style="--d:220ms">বরিশাল বিশ্ববিদ্যালয়ের বাসের সময়সূচি, স্টপেজ আর অফলাইন ম্যাপ, এক অ্যাপে।</p>
+          <div class="hero-ctas reveal" style="--d:280ms">
+            <a class="btn btn-primary btn-lg" href="#download" data-download-cta>
+              <svg class="i"><use href="#i-android"/></svg>
+              <span><small>Get it for</small>Android</span>
+            </a>
+            <a class="btn btn-ghost btn-lg" data-gh-link="repo" href="#open-source">
+              <svg class="i"><use href="#i-github"/></svg>
+              <span><small>Source code</small>GitHub</span>
+            </a>
+          </div>
+          <ul class="hero-meta reveal" style="--d:340ms" aria-label="At a glance">
+            <li><svg class="i"><use href="#i-check"/></svg>Free, no ads</li>
+            <li><svg class="i"><use href="#i-check"/></svg>No account needed</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Works offline</li>
+            <li><svg class="i"><use href="#i-check"/></svg>Android 7.0+</li>
+          </ul>
+        </div>
+
+        <div class="hero-visual">
+          <svg class="hero-map" viewBox="0 0 640 640" aria-hidden="true" focusable="false">
+            <g class="map-streets" fill="none" stroke-linecap="round">
+              <path d="M-40 120 C 160 90 380 160 690 100"/>
+              <path d="M110 -40 C 140 200 80 420 140 690"/>
+              <path d="M470 -40 C 430 220 520 420 480 690"/>
+              <path d="M-40 430 C 200 400 420 470 690 420"/>
+              <path d="M260 -40 C 280 160 240 300 300 690" class="thin"/>
+              <path d="M-40 260 C 200 250 460 300 690 260" class="thin"/>
+            </g>
+            <path class="map-river" d="M-60 560 C 120 520 220 600 330 690" fill="none" stroke-linecap="round"/>
+            <path class="map-river" d="M690 40 C 600 120 620 210 690 260" fill="none" stroke-linecap="round"/>
+            <path id="hero-route" class="map-route-casing" d="M-30 540 C 90 500 150 420 250 400 S 410 380 460 290 S 560 120 680 90" fill="none"/>
+            <path class="map-route" d="M-30 540 C 90 500 150 420 250 400 S 410 380 460 290 S 560 120 680 90" fill="none"/>
+            <g class="map-stops">
+              <circle cx="150" cy="447" r="7"/>
+              <circle cx="335" cy="383" r="7"/>
+              <circle cx="487" cy="231" r="7"/>
+            </g>
+            <g class="hero-bus">
+              <circle class="bus-ripple" r="16" cx="0" cy="0"/>
+              <use href="#bus-pin" x="-17" y="-46" width="34" height="46"/>
+              <animateMotion dur="16s" repeatCount="indefinite" rotate="0" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+                <mpath href="#hero-route"/>
+              </animateMotion>
+            </g>
+          </svg>
+
+          <div class="phone hero-phone">
+            <img src="assets/screens/map-dark.webp" data-src-dark="assets/screens/map-dark.webp" data-src-light="assets/screens/map-light.webp"
+                 width="390" height="844" fetchpriority="high"
+                 alt="BU Bus Tracker map screen showing student bus routes around the University of Barishal">
+          </div>
+
+          <div class="float-card fc-schedule">
+            <span class="fc-icon"><svg class="i"><use href="#i-calendar"/></svg></span>
+            <span><b>Student route 01</b><small>From University · 8:30 AM</small><small class="dim">Boikali, BRTC-06</small></span>
+          </div>
+          <div class="float-card fc-offline">
+            <span class="fc-icon teal"><svg class="i"><use href="#i-wifi-off"/></svg></span>
+            <span><b>Works offline</b><small>Map, schedule &amp; stops</small></span>
+          </div>
+          <div class="float-card fc-live">
+            <span class="live-dot"></span>
+            <span><b>Live tracking</b><small>In testing</small></span>
+          </div>
+        </div>
+      </div>
+      <a class="scroll-cue" href="#features" aria-label="Scroll to the features"><span></span></a>
+    </section>
+
+    <!-- Facts -->
+    <section class="facts" aria-label="The app in numbers">
+      <div class="container facts-grid">
+        <div class="fact reveal"><b data-count="11">11</b><span>bus timetables</span></div>
+        <div class="fact reveal" style="--d:80ms"><b data-count="101">101</b><span>departures listed</span></div>
+        <div class="fact reveal" style="--d:160ms"><b data-count="3">3</b><span>groups: students, teachers, staff</span></div>
+        <div class="fact reveal" style="--d:240ms"><b><span data-count="2">2</span> MB</b><span>offline map of the routes</span></div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">Features</p>
+          <h2 id="features-title">Everything about your bus, in your pocket</h2>
+          <p>Built for the people who ride University of Barishal buses every day, and tested on real phones.</p>
+        </header>
+
+        <div class="feature-grid">
+          <article class="card feature reveal">
+            <span class="badge-icon red"><svg class="i"><use href="#i-wifi-off"/></svg></span>
+            <h3>Offline map of Barishal</h3>
+            <p>Streets, buildings, the river and landmarks along the bus routes are stored on your phone. Checked with the phone in airplane mode.</p>
+            <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
+          </article>
+          <article class="card feature reveal" style="--d:60ms">
+            <span class="badge-icon amber"><svg class="i"><use href="#i-calendar"/></svg></span>
+            <h3>The official bus schedule</h3>
+            <p>Every departure for students, teachers and staff, with the buses named for each trip, from the university's own Bus Schedule.</p>
+            <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
+          </article>
+          <article class="card feature reveal" style="--d:120ms">
+            <span class="badge-icon teal"><svg class="i"><use href="#i-route"/></svg></span>
+            <h3>Routes and stops on the map</h3>
+            <p>See where each route runs, tap a stop to see which routes call there, and jump straight to it on the map.</p>
+            <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
+          </article>
+          <article class="card feature reveal">
+            <span class="badge-icon river"><svg class="i"><use href="#i-languages"/></svg></span>
+            <h3>Bangla and English</h3>
+            <p lang="en">Stop and bus names appear as the university publishes them in Bangla, with English beside them.</p>
+            <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
+          </article>
+          <article class="card feature reveal" style="--d:60ms">
+            <span class="badge-icon violet"><svg class="i"><use href="#i-building"/></svg></span>
+            <h3>Light, dark and 3D</h3>
+            <p>A clean map in the style you know from navigation apps. Tilt it with two fingers to see the buildings rise.</p>
+            <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
+          </article>
+          <article class="card feature reveal" style="--d:120ms">
+            <span class="badge-icon teal"><svg class="i"><use href="#i-user-check"/></svg></span>
+            <h3>No account needed</h3>
+            <p>Open it and go. Only bus drivers and transport office staff sign in, with their Google account.</p>
+            <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
+          </article>
+          <article class="card feature soon reveal">
+            <span class="badge-icon amber"><svg class="i"><use href="#i-radio"/></svg></span>
+            <h3>Live bus tracking</h3>
+            <p>Watch the buses move on the map in real time, shared from the driver's phone during each trip.</p>
+            <span class="tag soon"><span class="live-dot"></span>In testing</span>
+          </article>
+          <article class="card feature soon reveal" style="--d:60ms">
+            <span class="badge-icon red"><svg class="i"><use href="#i-timer"/></svg></span>
+            <h3>Arrival time at your stop</h3>
+            <p>How many minutes until the bus reaches your stop, worked out along the real route, not as the crow flies.</p>
+            <span class="tag soon">In testing</span>
+          </article>
+          <article class="card feature soon reveal" style="--d:120ms">
+            <span class="badge-icon river"><svg class="i"><use href="#i-bell"/></svg></span>
+            <h3>Announcements</h3>
+            <p>Route changes, delays and notices from the transport office, right on the map. Push notifications come later.</p>
+            <span class="tag soon">In testing</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section section-alt" id="how" aria-labelledby="how-title">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">How it works</p>
+          <h2 id="how-title">From the driver's phone to yours, in seconds</h2>
+          <p>Live tracking is built and now being tested with real buses. The schedule, stops and map already work today, even offline.</p>
+        </header>
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step-icon red"><svg class="i"><use href="#i-bus"/></svg></span>
+            <span class="step-num">1</span>
+            <h3>The driver starts the trip</h3>
+            <p>The driver's phone shares the bus's position every few seconds while the trip runs, and stops when it ends.</p>
+          </li>
+          <li class="step-link" aria-hidden="true"><svg viewBox="0 0 120 24" preserveAspectRatio="none"><path d="M2 12 H118"/></svg></li>
+          <li class="step reveal" style="--d:120ms">
+            <span class="step-icon river"><svg class="i"><use href="#i-shield"/></svg></span>
+            <span class="step-num">2</span>
+            <h3>The cloud checks it</h3>
+            <p>Positions are accepted only from the driver of that bus's active trip, then sent on to everyone straight away.</p>
+          </li>
+          <li class="step-link" aria-hidden="true"><svg viewBox="0 0 120 24" preserveAspectRatio="none"><path d="M2 12 H118"/></svg></li>
+          <li class="step reveal" style="--d:240ms">
+            <span class="step-icon teal"><svg class="i"><use href="#i-phone"/></svg></span>
+            <span class="step-num">3</span>
+            <h3>Your phone shows the bus</h3>
+            <p>The bus glides along its route on your map, with its next stop and an estimate of when it gets there.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Screens -->
+    <section class="section" id="screens" aria-labelledby="screens-title">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">Screens</p>
+          <h2 id="screens-title">See the app</h2>
+          <p>Real screenshots of the current version, not mock-ups.</p>
+        </header>
+      </div>
+      <div class="gallery-wrap reveal">
+        <button class="icon-btn gallery-nav prev" type="button" aria-label="Previous screenshot"><svg class="i"><use href="#i-left"/></svg></button>
+        <div class="gallery" tabindex="0" aria-label="App screenshots">
+          <figure class="shot">
+            <div class="phone"><img src="assets/screens/map-light.webp" width="390" height="844" loading="lazy" alt="Light map with the student bus routes around the University of Barishal"></div>
+            <figcaption><b>Map</b>Routes around campus, in light mode</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="phone"><img src="assets/screens/schedule.webp" width="390" height="844" loading="lazy" alt="Bus schedule for student route 01, with departures from the University in Bangla and English"></div>
+            <figcaption><b>Schedule</b>Every departure, in Bangla and English</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="phone"><img src="assets/screens/map-dark.webp" width="390" height="844" loading="lazy" alt="Dark map with the bus routes near the university"></div>
+            <figcaption><b>Dark mode</b>Easy on the eyes at night</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="phone"><img src="assets/screens/stops.webp" width="390" height="844" loading="lazy" alt="List of bus stops with the routes that call at each one"></div>
+            <figcaption><b>Stops</b>Every stop and the routes that call there</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="phone"><img src="assets/screens/profile.webp" width="390" height="844" loading="lazy" alt="Settings screen with theme choice and the offline map details"></div>
+            <figcaption><b>Settings</b>Theme and offline map</figcaption>
+          </figure>
+        </div>
+        <button class="icon-btn gallery-nav next" type="button" aria-label="Next screenshot"><svg class="i"><use href="#i-right"/></svg></button>
+      </div>
+      <p class="container note">Map data © OpenStreetMap contributors.</p>
+    </section>
+
+    <!-- Roadmap -->
+    <section class="section section-alt" id="roadmap" aria-labelledby="roadmap-title">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">Roadmap</p>
+          <h2 id="roadmap-title">Where the app is going</h2>
+          <p>What is ready today and what comes next. Plans can change as the work goes on.</p>
+        </header>
+        <ol class="timeline">
+          <li class="tl done reveal">
+            <span class="tl-dot"><svg class="i"><use href="#i-check"/></svg></span>
+            <div class="tl-body">
+              <p class="tl-label">Ready</p>
+              <h3>The foundation</h3>
+              <ul>
+                <li>Offline map of the bus routes, checked in airplane mode</li>
+                <li>The official schedule: 11 timetables, 101 departures</li>
+                <li>Routes and stops on the map</li>
+                <li>Tools for the transport office to manage stops, the schedule, buses and staff</li>
+              </ul>
+            </div>
+          </li>
+          <li class="tl now reveal">
+            <span class="tl-dot"><span class="live-dot"></span></span>
+            <div class="tl-body">
+              <p class="tl-label">In testing</p>
+              <h3>Live tracking</h3>
+              <ul>
+                <li>Driver mode: sharing the bus's position during a trip</li>
+                <li>Buses moving on the map in real time</li>
+                <li>Arrival time at your stop on routes 01 to 03</li>
+                <li>Announcements from the transport office in the app</li>
+              </ul>
+            </div>
+          </li>
+          <li class="tl next reveal">
+            <span class="tl-dot"></span>
+            <div class="tl-body">
+              <p class="tl-label">Next</p>
+              <h3>Out on the road</h3>
+              <ul>
+                <li>Trial runs on real university buses</li>
+                <li>Push notifications for announcements</li>
+              </ul>
+            </div>
+          </li>
+          <li class="tl later reveal">
+            <span class="tl-dot"></span>
+            <div class="tl-body">
+              <p class="tl-label">Later</p>
+              <h3>More phones</h3>
+              <ul>
+                <li>iPhone version</li>
+                <li>Google Play listing</li>
+              </ul>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Download -->
+    <section class="section" id="download" aria-labelledby="download-title">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">Download</p>
+          <h2 id="download-title">Get BU Bus Tracker</h2>
+          <p>Free for everyone. New versions are published here and on GitHub.</p>
+        </header>
+
+        <div class="download-grid">
+          <article class="card dl-card android reveal" data-release-state="loading">
+            <div class="dl-head">
+              <span class="badge-icon teal big"><svg class="i"><use href="#i-android"/></svg></span>
+              <div>
+                <h3>Android</h3>
+                <p class="dim">Android 7.0 or newer</p>
+              </div>
+              <span class="tag" data-release-tag>Checking…</span>
+            </div>
+
+            <dl class="dl-meta">
+              <div><dt><svg class="i"><use href="#i-tag"/></svg>Version</dt><dd data-release="version">—</dd></div>
+              <div><dt><svg class="i"><use href="#i-calendar"/></svg>Released</dt><dd data-release="date">—</dd></div>
+              <div><dt><svg class="i"><use href="#i-drive"/></svg>Size</dt><dd data-release="size">—</dd></div>
+              <div><dt><svg class="i"><use href="#i-download"/></svg>Downloads</dt><dd data-release="downloads">—</dd></div>
+            </dl>
+
+            <p class="dl-status" data-release="status">Looking for the latest version…</p>
+
+            <div class="dl-actions">
+              <a class="btn btn-primary btn-lg" data-release-link="apk" href="#download" aria-disabled="true">
+                <svg class="i"><use href="#i-download"/></svg><span>Download APK</span>
+              </a>
+              <a class="btn btn-ghost" data-release-link="notes" href="#download" aria-disabled="true">
+                <svg class="i"><use href="#i-file"/></svg><span>Release notes</span>
+              </a>
+            </div>
+
+            <div class="dl-extra">
+              <div class="sha" data-release="sha-wrap" hidden>
+                <span class="dim">SHA-256</span>
+                <code data-release="sha"></code>
+                <button class="icon-btn copy" type="button" aria-label="Copy SHA-256 checksum" data-copy-sha><svg class="i"><use href="#i-copy"/></svg></button>
+              </div>
+              <div class="qr" data-qr hidden>
+                <canvas width="132" height="132" aria-label="QR code to download the app on your phone" role="img"></canvas>
+                <span>Scan with your phone to download</span>
+              </div>
+              <a class="all-releases" data-gh-link="releases" href="#open-source">All versions<svg class="i"><use href="#i-arrow"/></svg></a>
+            </div>
+          </article>
+
+          <article class="card dl-card ios reveal" style="--d:100ms">
+            <div class="dl-head">
+              <span class="badge-icon river big"><svg class="i"><use href="#i-phone"/></svg></span>
+              <div>
+                <h3>iPhone</h3>
+                <p class="dim">iOS 15.5 or newer</p>
+              </div>
+              <span class="tag soon">Planned</span>
+            </div>
+            <p>The app is built with Flutter, which also runs on iPhone. The iPhone version still has to be built and tested on a Mac, so it will follow the Android release.</p>
+            <a class="btn btn-ghost" data-gh-link="repo" href="#open-source"><svg class="i"><use href="#i-star"/></svg><span>Follow progress on GitHub</span></a>
+          </article>
+
+          <article class="card install reveal" style="--d:200ms">
+            <h3><svg class="i"><use href="#i-shield"/></svg>Installing the APK</h3>
+            <ol>
+              <li><b>Download</b> the APK on your Android phone, from this page or from GitHub only.</li>
+              <li><b>Open</b> the downloaded file. If Android asks, allow <i>Install unknown apps</i> for your browser or file manager.</li>
+              <li><b>Tap Install</b>, then open BU Bus Tracker. The offline map sets itself up on first launch.</li>
+            </ol>
+            <p class="dim">Google Play Protect may show a warning because the app is not from the Play Store yet. Updating works the same way: install the new APK over the old one.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Open source -->
+    <section class="section section-alt" id="open-source" aria-labelledby="oss-title">
+      <div class="container oss">
+        <div class="oss-copy reveal">
+          <p class="eyebrow">Open source</p>
+          <h2 id="oss-title">Built in the open</h2>
+          <p data-gh-text>The source code will be published on GitHub, where you can follow the work, report problems and suggest ideas.</p>
+          <div class="oss-actions">
+            <a class="btn btn-primary" data-gh-link="repo" href="#open-source"><svg class="i"><use href="#i-github"/></svg><span>View on GitHub</span></a>
+            <a class="btn btn-ghost" data-gh-link="new-issue" href="#open-source"><svg class="i"><use href="#i-bug"/></svg><span>Report a problem</span></a>
+          </div>
+          <ul class="tech" aria-label="Built with">
+            <li>Flutter</li><li>MapLibre</li><li>OpenStreetMap</li><li>Firebase</li>
+          </ul>
+        </div>
+        <div class="oss-stats reveal" style="--d:120ms">
+          <div class="stat"><svg class="i"><use href="#i-star"/></svg><b data-gh="stars">—</b><span>Stars</span></div>
+          <div class="stat"><svg class="i"><use href="#i-download"/></svg><b data-gh="downloads">—</b><span>Downloads</span></div>
+          <div class="stat"><svg class="i"><use href="#i-fork"/></svg><b data-gh="forks">—</b><span>Forks</span></div>
+          <div class="stat"><svg class="i"><use href="#i-tag"/></svg><b data-gh="version">—</b><span>Latest version</span></div>
+          <p class="stats-note dim" data-gh="note">Numbers appear here once the project is on GitHub.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="container narrow">
+        <header class="section-head reveal">
+          <p class="eyebrow">FAQ</p>
+          <h2 id="faq-title">Questions, answered</h2>
+        </header>
+        <div class="faq">
+          <details class="faq-item reveal" style="--d:0ms">
+            <summary><span class="q-num">01</span><span class="q-text">Is BU Bus Tracker free?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>Yes. The app is free, has no ads and needs no payment of any kind.</p></div>
+          </details>
+          <details class="faq-item reveal" style="--d:50ms">
+            <summary><span class="q-num">02</span><span class="q-text">Do I need an account?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>No. Students, teachers and staff can use everything without signing in. Only bus drivers and transport office staff sign in, with their Google account.</p></div>
+          </details>
+          <details class="faq-item reveal" style="--d:100ms">
+            <summary><span class="q-num">03</span><span class="q-text">Does it work without internet?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>Yes. The map, the bus schedule and the stops are stored on your phone, so they work with no connection. Live bus positions, once available, need a connection.</p></div>
+          </details>
+          <details class="faq-item reveal" style="--d:150ms">
+            <summary><span class="q-num">04</span><span class="q-text">When will live bus tracking be available?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>It is built and being tested now, and will be switched on for everyone once it has been tried on real buses. New versions are published on this page and on GitHub.</p></div>
+          </details>
+          <details class="faq-item reveal" style="--d:200ms">
+            <summary><span class="q-num">05</span><span class="q-text">Which routes are included?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>Student routes 01 to 03, teacher routes 04 to 07 and staff routes 04, 05, 06 and 08, taken from the university's official bus schedule.</p></div>
+          </details>
+          <details class="faq-item reveal" style="--d:250ms">
+            <summary><span class="q-num">06</span><span class="q-text">Does the app track my location?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>No. If you allow it, your location is only used to show where you are on your own map, and it is not uploaded. Bus positions come from the driver's phone during a trip.</p></div>
+          </details>
+          <details class="faq-item reveal" style="--d:300ms">
+            <summary><span class="q-num">07</span><span class="q-text">Why is it not on Google Play? Is the APK safe?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>Early versions are released as an APK on GitHub, which is quicker while the app changes often. A Play Store listing is planned. Download only from this page or the project's GitHub page, and compare the SHA-256 checksum shown here if you want to be sure the file is untouched.</p></div>
+          </details>
+          <details class="faq-item reveal" style="--d:350ms">
+            <summary><span class="q-num">08</span><span class="q-text">Is there an iPhone version?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>It is planned. The app is built with Flutter, which runs on iPhone too, but the iPhone version still has to be built and tested on a Mac.</p></div>
+          </details>
+          <details class="faq-item reveal" lang="bn" style="--d:400ms">
+            <summary><span class="q-num">09</span><span class="q-text">অ্যাপটি কি বিনামূল্যে?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>হ্যাঁ। অ্যাপটি সম্পূর্ণ বিনামূল্যে, কোনো বিজ্ঞাপন নেই, আর যাত্রীদের কোনো অ্যাকাউন্ট খুলতে হয় না।</p></div>
+          </details>
+          <details class="faq-item reveal" lang="bn" style="--d:450ms">
+            <summary><span class="q-num">10</span><span class="q-text">ইন্টারনেট ছাড়া কি অ্যাপটি চলে?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>হ্যাঁ। ম্যাপ, বাসের সময়সূচি আর স্টপেজগুলো ফোনেই রাখা থাকে, তাই ইন্টারনেট ছাড়াও দেখা যায়।</p></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final call to action -->
+    <section class="section final-cta" aria-labelledby="cta-title">
+      <div class="container">
+        <div class="cta-card reveal">
+          <img src="assets/icons/icon-192.png" alt="" width="88" height="88" loading="lazy">
+          <h2 id="cta-title">Never guess where your bus is</h2>
+          <p>Download BU Bus Tracker and keep the schedule and the map in your pocket.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary btn-lg" href="#download" data-download-cta><svg class="i"><use href="#i-android"/></svg><span><small>Get it for</small>Android</span></a>
+            <a class="btn btn-ghost btn-lg" data-gh-link="repo" href="#open-source"><svg class="i"><use href="#i-github"/></svg><span><small>Star it on</small>GitHub</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="#top"><img src="assets/icons/apple-touch-icon.png" alt="" width="32" height="32" loading="lazy"><span>BU Bus Tracker</span></a>
+        <p>Bus schedules, stops and an offline map for University of Barishal students, teachers and staff.</p>
+        <p lang="bn" class="dim">বরিশাল বিশ্ববিদ্যালয়ের বাস, এখন ম্যাপে।</p>
+      </div>
+      <nav aria-label="App">
+        <h3>App</h3>
+        <a href="#features">Features</a>
+        <a href="#screens">Screens</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#download">Download</a>
+      </nav>
+      <nav aria-label="Project">
+        <h3>Project</h3>
+        <a data-gh-link="repo" href="#open-source">Source code</a>
+        <a data-gh-link="releases" href="#open-source">Releases</a>
+        <a data-gh-link="new-issue" href="#open-source">Report a problem</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </div>
+    <div class="container footer-bottom">
+      <p>© <span data-year>2026</span> BU Bus Tracker</p>
+      <p>Map data © <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a> contributors · Built with Flutter and MapLibre</p>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
+</body>
+</html>

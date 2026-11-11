@@ -1,0 +1,202 @@
+{
+  "type": "FeatureCollection",
+  "unconfirmed": true,
+  "note": "UNCONFIRMED stop positions for review only. Found by name in OpenStreetMap, not confirmed by anyone. Loaded only with --dart-define=REVIEW_STOPS=true.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-university",
+        "name": "University",
+        "description": "বিশ্ববিদ্যালয় · Route 01, 02, 03. Matched to \"University of Barisal\". Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.363381,
+          22.659967
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-kathaltola",
+        "name": "Kathaltola",
+        "description": "কাঠালতলা · Route 01, 03. Matched to \"kathaltola bus stop\". Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.34692,
+          22.67428
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-rupatoli-housing",
+        "name": "Rupatoli Housing",
+        "description": "রুপাতলী হাউজিং · Route 01, 03. Matched to \"Rupatoli Housing Estate\", the estate and not a point on the road. Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.34904,
+          22.67749
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-amtala-mor",
+        "name": "Amtala Mor",
+        "description": "আমতলার মোড় · Route 01, 03. Only \"Amtola Lake\" was found, which is near the junction, not on it. Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.35616,
+          22.68884
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-nuria-school",
+        "name": "Nuria School",
+        "description": "নুরিয়া স্কুল · Route 01. Matched to \"Nuria Ideal School\". Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.3594,
+          22.69026
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-bangla-bazar-mor",
+        "name": "Bangla Bazar Mor",
+        "description": "বাংলাবাজার মোড় · Route 01. Matched to \"Bangla Bazaar\", the market and not the junction. Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.36245,
+          22.6928
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-thana-council",
+        "name": "Thana Council Main Gate",
+        "description": "থানা কাউন্সিলের মূল গেট · Route 03. Matched to \"Barisal Thana Council\". Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.35214,
+          22.69566
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-chowmatha-mor",
+        "name": "Chowmatha Mor",
+        "description": "চৌমাথা মোড় · Route 03. Matched to \"Choumatha Bazar\". Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.35383,
+          22.70051
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-ttc-main-gate",
+        "name": "TTC Main Gate",
+        "description": "টিটিসি মূল গেট · Route 03. Matched to \"Barisal Technical Training Center\", not its gate. Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.35368,
+          22.70453
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-nathullabad",
+        "name": "Nathullabad Bridge Slope",
+        "description": "নথুল্লাবাদ ব্রীজের ঢাল · Route 03. Only the mosque at Nathullabad bus terminal was found, not the bridge slope. Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.34757,
+          22.71442
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-bottola-mor",
+        "name": "Bottola Mor",
+        "description": "বটতলার মোড় · Route 02. Matched to \"Bottola Bazar\". Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.36394,
+          22.70166
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-notun-bazar",
+        "name": "Notun Bazar (Tempo Stand)",
+        "description": "নতুন বাজার (টেম্পু স্ট্যান্ড) · Route 02. Matched to \"Notun Bazaar\". Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.36129,
+          22.7114
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "review-opsonin-mor",
+        "name": "Opsonin Mor",
+        "description": "অপসোনিন মোড় · Route 02. DOUBTFUL: the only match is the Opsonin factory, which is probably the wrong place. Position not confirmed."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.34175,
+          22.65639
+        ]
+      }
+    }
+  ]
+}

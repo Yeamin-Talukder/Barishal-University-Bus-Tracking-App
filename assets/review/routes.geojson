@@ -1,0 +1,6 @@
+{
+  "type": "FeatureCollection",
+  "unconfirmed": true,
+  "note": "UNCONFIRMED stop positions for review only. Found by name in OpenStreetMap, not confirmed by anyone. Loaded only with --dart-define=REVIEW_STOPS=true.",
+  "features": []
+}

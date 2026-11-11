@@ -1,0 +1,20 @@
+{
+  "name": "bu-bus-tracker-functions",
+  "private": true,
+  "description": "Trusted backend operations for the University of Barishal Bus Tracker.",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

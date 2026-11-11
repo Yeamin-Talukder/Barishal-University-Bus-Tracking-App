@@ -1,0 +1,82 @@
+{
+  "type": "FeatureCollection",
+  "demo": true,
+  "note": "DEMO DATA for development only. Not an official University of Barishal route. Geometry follows OpenStreetMap roads; stop positions are unverified.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-campus",
+        "name": "University of Barishal",
+        "description": "Demo stop, position unverified"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.363432,
+          22.659971
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-karnakathi",
+        "name": "Karnakathi Junction",
+        "description": "Demo stop, position unverified"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.36116,
+          22.6602
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-saown",
+        "name": "Saown Filling Station",
+        "description": "Demo stop, position unverified"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.34653,
+          22.66734
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-kathaltola",
+        "name": "Kathaltola",
+        "description": "Demo stop, position unverified"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.34692,
+          22.67428
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-rupatoli",
+        "name": "Rupatoli",
+        "description": "Demo stop, position unverified"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.346895,
+          22.678055
+        ]
+      }
+    }
+  ]
+}

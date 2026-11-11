@@ -1,0 +1,558 @@
+{
+  "note": "Name matches from the OpenStreetMap data in the app's offline map, for review. Not official, not confirmed, not used by the app.",
+  "stops": {
+    "বিশ্ববিদ্যালয়": [
+      {
+        "names": [
+          "University of Barisal",
+          "বরিশাল বিশ্ববিদ্যালয়"
+        ],
+        "layer": "pois",
+        "kind": "university",
+        "shape": "point",
+        "lat": 22.659967,
+        "lon": 90.36338,
+        "km_from_university": 0.0,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "বরিশাল বিশ্ববিদ্যালয় শহীদ মিনার"
+        ],
+        "layer": "pois",
+        "kind": "monument",
+        "shape": "point",
+        "lat": 22.659408,
+        "lon": 90.364118,
+        "km_from_university": 0.1,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "University of Barishal Cafeteria",
+          "বরিশাল বিশ্ববিদ্যালয় ক্যাফেটেরিয়া"
+        ],
+        "layer": "pois",
+        "kind": "fast_food",
+        "shape": "point",
+        "lat": 22.658856,
+        "lon": 90.363622,
+        "km_from_university": 0.13,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "University of Barishal Central Temple",
+          "বরিশাল বিশ্ববিদ্যালয় কেন্দ্রীয় মন্দির"
+        ],
+        "layer": "pois",
+        "kind": "place_of_worship",
+        "shape": "point",
+        "lat": 22.658497,
+        "lon": 90.363708,
+        "km_from_university": 0.17,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "University of Barishal Central Library",
+          "বরিশাল বিশ্ববিদ্যালয় কেন্দ্রীয় লাইব্রেরি"
+        ],
+        "layer": "pois",
+        "kind": "library",
+        "shape": "point",
+        "lat": 22.65826,
+        "lon": 90.36249,
+        "km_from_university": 0.21,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "University of Barishal Central Mosque",
+          "বরিশাল বিশ্ববিদ্যালয় কেন্দ্রীয় জামে মসজিদ"
+        ],
+        "layer": "pois",
+        "kind": "place_of_worship",
+        "shape": "point",
+        "lat": 22.657388,
+        "lon": 90.361986,
+        "km_from_university": 0.32,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Police Camp-Barisal University",
+          "পুলিশ ক্যাম্প-বরিশাল বিশ্ববিদ্যালয়"
+        ],
+        "layer": "pois",
+        "kind": "police",
+        "shape": "point",
+        "lat": 22.65719,
+        "lon": 90.36246,
+        "km_from_university": 0.32,
+        "pieces": 1
+      }
+    ],
+    "বরিশাল ক্লাব": [],
+    "বাংলাবাজার মোড়": [
+      {
+        "names": [
+          "Bangla Bazar Road",
+          "বাংলা বাজার সড়ক"
+        ],
+        "layer": "roads",
+        "kind": "major_road",
+        "shape": "line",
+        "lat": 22.690041,
+        "lon": 90.358797,
+        "km_from_university": 3.38,
+        "pieces": 2,
+        "lat_range": [
+          22.690041,
+          22.693905
+        ],
+        "lon_range": [
+          90.358797,
+          90.363691
+        ]
+      },
+      {
+        "names": [
+          "Bangla Bazaar",
+          "বাংলাবাজার"
+        ],
+        "layer": "pois",
+        "kind": "retail",
+        "shape": "point",
+        "lat": 22.692797,
+        "lon": 90.362447,
+        "km_from_university": 3.65,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Bangla Bazar"
+        ],
+        "layer": "pois",
+        "kind": "retail",
+        "shape": "point",
+        "lat": 22.693027,
+        "lon": 90.362782,
+        "km_from_university": 3.68,
+        "pieces": 1
+      }
+    ],
+    "নুরিয়া স্কুল": [
+      {
+        "names": [
+          "Nuria Ideal School",
+          "নুরিয়া আইডিয়াল স্কুল"
+        ],
+        "layer": "pois",
+        "kind": "school",
+        "shape": "point",
+        "lat": 22.690255,
+        "lon": 90.359397,
+        "km_from_university": 3.39,
+        "pieces": 1
+      }
+    ],
+    "আমতলার মোড়": [
+      {
+        "names": [
+          "Amtola Lake",
+          "আমতলা লেক"
+        ],
+        "layer": "pois",
+        "kind": "water",
+        "shape": "point",
+        "lat": 22.68884,
+        "lon": 90.356157,
+        "km_from_university": 3.29,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Amtola Lake",
+          "আমতলা লেক"
+        ],
+        "layer": "water",
+        "kind": "water",
+        "shape": "point",
+        "lat": 22.68884,
+        "lon": 90.356157,
+        "km_from_university": 3.29,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Amtola Road",
+          "আমতলা রোড"
+        ],
+        "layer": "roads",
+        "kind": "minor_road",
+        "shape": "line",
+        "lat": 22.641171,
+        "lon": 90.198445,
+        "km_from_university": 17.05,
+        "pieces": 1
+      }
+    ],
+    "রুপাতলী হাউজিং": [
+      {
+        "names": [
+          "Rupatali Housing Estate Jame Masjid"
+        ],
+        "layer": "pois",
+        "kind": "place_of_worship",
+        "shape": "point",
+        "lat": 22.677097,
+        "lon": 90.349006,
+        "km_from_university": 2.41,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Rupatoli Housing Estate",
+          "রূপাতলী আবাসিক এলাকা"
+        ],
+        "layer": "pois",
+        "kind": "residential",
+        "shape": "point",
+        "lat": 22.677493,
+        "lon": 90.349036,
+        "km_from_university": 2.44,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Rupatoli Local Bus Stop"
+        ],
+        "layer": "pois",
+        "kind": "bus_stop",
+        "shape": "point",
+        "lat": 22.678087,
+        "lon": 90.346735,
+        "km_from_university": 2.64,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Lili Filing Station, Rupatoli",
+          "লিলি ফিলিং স্টেশন, রুপাতলি"
+        ],
+        "layer": "pois",
+        "kind": "fuel",
+        "shape": "point",
+        "lat": 22.67804,
+        "lon": 90.346571,
+        "km_from_university": 2.65,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Rupatoli Bus Terminal",
+          "রুপাতলী বাস টার্মিনাল"
+        ],
+        "layer": "pois",
+        "kind": "bus_station",
+        "shape": "point",
+        "lat": 22.678446,
+        "lon": 90.345908,
+        "km_from_university": 2.73,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Rupatoli Filling Station",
+          "রুপাতলী ফিলিং স্টেশন"
+        ],
+        "layer": "pois",
+        "kind": "fuel",
+        "shape": "point",
+        "lat": 22.675011,
+        "lon": 90.341853,
+        "km_from_university": 2.77,
+        "pieces": 1
+      }
+    ],
+    "কাঠালতলা": [
+      {
+        "names": [
+          "kathaltola bus stop",
+          "কাঠালতলা বাস স্টপ"
+        ],
+        "layer": "pois",
+        "kind": "bus_stop",
+        "shape": "point",
+        "lat": 22.674281,
+        "lon": 90.346917,
+        "km_from_university": 2.32,
+        "pieces": 1
+      }
+    ],
+    "টোলঘর": [],
+    "নতুন বাজার (টেম্পু স্ট্যান্ড)": [
+      {
+        "names": [
+          "ফুলতলা নতুন বাজার"
+        ],
+        "layer": "pois",
+        "kind": "supermarket",
+        "shape": "point",
+        "lat": 22.653945,
+        "lon": 90.362069,
+        "km_from_university": 0.68,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Notun Bazaar",
+          "নতুন বাজার"
+        ],
+        "layer": "pois",
+        "kind": "retail",
+        "shape": "point",
+        "lat": 22.711402,
+        "lon": 90.361291,
+        "km_from_university": 5.72,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Padrishibpur New Market"
+        ],
+        "layer": "pois",
+        "kind": "supermarket",
+        "shape": "point",
+        "lat": 22.518263,
+        "lon": 90.308744,
+        "km_from_university": 16.73,
+        "pieces": 1
+      }
+    ],
+    "মুন্সি গ্যারেজ": [],
+    "অপসোনিন মোড়": [
+      {
+        "names": [
+          "Opsonin Pharmaceuticals Ltd"
+        ],
+        "layer": "pois",
+        "kind": "industrial",
+        "shape": "point",
+        "lat": 22.656386,
+        "lon": 90.341751,
+        "km_from_university": 2.25,
+        "pieces": 1
+      }
+    ],
+    "বটতলার মোড়": [
+      {
+        "names": [
+          "Bot Tola Jame Masjid"
+        ],
+        "layer": "pois",
+        "kind": "place_of_worship",
+        "shape": "point",
+        "lat": 22.701475,
+        "lon": 90.364735,
+        "km_from_university": 4.62,
+        "pieces": 2,
+        "lat_range": [
+          22.701475,
+          22.701512
+        ],
+        "lon_range": [
+          90.364721,
+          90.364735
+        ]
+      },
+      {
+        "names": [
+          "Bottola Bazar"
+        ],
+        "layer": "pois",
+        "kind": "marketplace",
+        "shape": "point",
+        "lat": 22.701665,
+        "lon": 90.363944,
+        "km_from_university": 4.64,
+        "pieces": 1
+      }
+    ],
+    "করিমকুটির": [],
+    "নথুল্লাবাদ ব্রীজের ঢাল": [
+      {
+        "names": [
+          "Nathullahbad Central Bus Terminal Jame Masjid",
+          "নথুল্লাবাদ কেন্দ্রীয় বাস টার্মিনাল জামে মসজিদ"
+        ],
+        "layer": "pois",
+        "kind": "place_of_worship",
+        "shape": "point",
+        "lat": 22.714418,
+        "lon": 90.347566,
+        "km_from_university": 6.27,
+        "pieces": 1
+      }
+    ],
+    "কলেজ এভিনিউ": [],
+    "টিটিসি মূল গেট": [
+      {
+        "names": [
+          "TTC Jame Masjid"
+        ],
+        "layer": "pois",
+        "kind": "place_of_worship",
+        "shape": "point",
+        "lat": 22.704258,
+        "lon": 90.352936,
+        "km_from_university": 5.04,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Barisal Technical Training Center",
+          "বরিশাল টেকনিক্যাল ট্রেনিং সেন্টার"
+        ],
+        "layer": "pois",
+        "kind": "college",
+        "shape": "point",
+        "lat": 22.704528,
+        "lon": 90.353681,
+        "km_from_university": 5.05,
+        "pieces": 1
+      }
+    ],
+    "চৌমাথা মোড়": [
+      {
+        "names": [
+          "চৌমাথা বাজার"
+        ],
+        "layer": "pois",
+        "kind": "marketplace",
+        "shape": "point",
+        "lat": 22.6419,
+        "lon": 90.360325,
+        "km_from_university": 2.03,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Choumatha Bazar",
+          "চৌমাথা বাজার"
+        ],
+        "layer": "pois",
+        "kind": "marketplace",
+        "shape": "point",
+        "lat": 22.700507,
+        "lon": 90.353826,
+        "km_from_university": 4.61,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Chaumatha Lake",
+          "চৌমাথা লেক"
+        ],
+        "layer": "pois",
+        "kind": "water",
+        "shape": "point",
+        "lat": 22.701878,
+        "lon": 90.353054,
+        "km_from_university": 4.78,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Choumatha Lake Paar",
+          "চৌমাথা লেকের পাড়"
+        ],
+        "layer": "pois",
+        "kind": "outdoor_seating",
+        "shape": "point",
+        "lat": 22.701878,
+        "lon": 90.353228,
+        "km_from_university": 4.78,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Chaumatha Lake",
+          "চৌমাথা লেক"
+        ],
+        "layer": "water",
+        "kind": "water",
+        "shape": "point",
+        "lat": 22.701878,
+        "lon": 90.353054,
+        "km_from_university": 4.78,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Kashipur Chowmatha Bazar"
+        ],
+        "layer": "pois",
+        "kind": "marketplace",
+        "shape": "point",
+        "lat": 22.734499,
+        "lon": 90.330437,
+        "km_from_university": 8.95,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Kashipur Chowmatha Bus Station"
+        ],
+        "layer": "pois",
+        "kind": "bus_stop",
+        "shape": "point",
+        "lat": 22.73462,
+        "lon": 90.330126,
+        "km_from_university": 8.97,
+        "pieces": 1
+      }
+    ],
+    "থানা কাউন্সিলের মূল গেট": [
+      {
+        "names": [
+          "Barisal Thana Council,Barisal",
+          "বরিশাল থানা কাউন্সিল, বরিশাল"
+        ],
+        "layer": "pois",
+        "kind": "townhall",
+        "shape": "point",
+        "lat": 22.69566,
+        "lon": 90.352136,
+        "km_from_university": 4.13,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "বাকেরগঞ্জ উপজেলা পরিষদ কমপ্লেক্স"
+        ],
+        "layer": "pois",
+        "kind": "townhall",
+        "shape": "point",
+        "lat": 22.541017,
+        "lon": 90.331508,
+        "km_from_university": 13.63,
+        "pieces": 1
+      },
+      {
+        "names": [
+          "Babuganj Upazila Parishad"
+        ],
+        "layer": "pois",
+        "kind": "townhall",
+        "shape": "point",
+        "lat": 22.807588,
+        "lon": 90.3032,
+        "km_from_university": 17.54,
+        "pieces": 1
+      }
+    ],
+    "ট্রাস্ট ভবন": []
+  }
+}
