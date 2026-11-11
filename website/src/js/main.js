@@ -278,6 +278,58 @@
     else window.addEventListener('load', draw);
   }
 
+  /* The other APKs of the release, for phones the main one does not fit. */
+  function showOtherFiles(release, chosen) {
+    var box = $('[data-release="files"]', card);
+    if (!box) return;
+    var others = (release.assets || []).filter(function (a) {
+      return /\.apk$/i.test(a.name) && a.name !== chosen.name;
+    });
+    if (!others.length) { box.hidden = true; return; }
+    box.textContent = '';
+    var what = /arm64/i.test(chosen.name) ? 'This file suits almost every phone. ' : '';
+    box.appendChild(document.createTextNode(what + 'Also available: '));
+    others.forEach(function (a, i) {
+      if (i) box.appendChild(document.createTextNode(', '));
+      var link = document.createElement('a');
+      link.href = a.browser_download_url;
+      var kind = /armv7|armeabi/i.test(a.name) ? 'older 32-bit phones' : (/x86/i.test(a.name) ? 'x86 devices' : a.name);
+      link.textContent = kind + ' (' + formatSize(a.size) + ')';
+      box.appendChild(link);
+    });
+    box.appendChild(document.createTextNode('.'));
+    box.hidden = false;
+  }
+
+  /* ---------- Download bar on phones ---------- */
+
+  var dock = $('[data-dock]');
+  function setDock(href, meta) {
+    if (!dock) return;
+    var link = $('[data-dock-link]', dock);
+    if (href) link.setAttribute('href', href);
+    if (meta) $('[data-dock-meta]', dock).textContent = meta;
+  }
+  (function () {
+    if (!dock) return;
+    dock.hidden = false;
+    var hero = $('.hero');
+    var download = $('#download');
+    var footer = $('.site-footer');
+    function update() {
+      var h = window.innerHeight;
+      var pastHero = hero ? hero.getBoundingClientRect().bottom < h * 0.35 : true;
+      // Not over the download section itself, nor over the footer.
+      var d = download ? download.getBoundingClientRect() : null;
+      var onDownload = d ? d.top < h * 0.8 && d.bottom > h * 0.2 : false;
+      var atFooter = footer ? footer.getBoundingClientRect().top < h - 40 : false;
+      dock.classList.toggle('show', pastHero && !onDownload && !atFooter);
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+
   function showNoRelease(message) {
     card.setAttribute('data-release-state', 'none');
     setTag('Coming soon', 'soon');
@@ -306,6 +358,8 @@
         $('[data-release="sha-wrap"]', card).hidden = false;
       }
       drawQr(apk.browser_download_url);
+      showOtherFiles(release, apk);
+      setDock(apk.browser_download_url, (release.tag_name || '') + ' · ' + formatSize(apk.size));
     } else {
       setRelease('size', '—');
       setRelease('status', 'This version has no APK attached. See the release page for its files.');
@@ -321,7 +375,9 @@
     });
   }
 
-  function render(data) {
+  // note: the line under the GitHub numbers. Left out when the numbers
+  // have just come from GitHub.
+  function render(data, note) {
     var releases = (data.releases || []).filter(function (r) { return !r.draft; });
     var total = 0;
     releases.forEach(function (r) {
@@ -335,7 +391,7 @@
     if (latest) {
       setGh('downloads', formatCount(total));
       setGh('version', latest.tag_name || '—');
-      setGh('note', 'Live from GitHub.');
+      setGh('note', note || 'Live from GitHub.');
       showRelease(latest, total);
     } else {
       setGh('note', data.repo ? 'Downloads appear here after the first release.' : 'The repository could not be found.');
@@ -354,21 +410,49 @@
     if (cached && Date.now() - cached.t < 10 * 60 * 1000) {
       render(cached);
     } else {
+      // GitHub answers only 60 questions an hour from one network, and a
+      // campus network can use those up. So the site also carries a copy of
+      // the release details saved when it was last built (release.json).
+      // That copy is shown at once, then replaced by GitHub's own answer;
+      // if GitHub does not answer, the copy stays, with its date.
+      var settled = false;
+      var shown = null;
+      var savedNote = function (d) {
+        return 'Figures saved on ' + formatDate(new Date(d.t).toISOString()) + '.';
+      };
+      var showSaved = function (d) {
+        if (settled || !d || !d.releases || !d.releases.length) return;
+        if (shown && shown.t >= d.t) return;
+        shown = d;
+        render(d, savedNote(d));
+      };
+      if (cached) showSaved(cached);
+      fetch('release.json', { cache: 'no-cache' })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(showSaved)
+        .catch(function () {});
+
       var api = 'https://api.github.com/repos/' + owner + '/' + repo;
       Promise.all([getJson(api), getJson(api + '/releases?per_page=100')])
         .then(function (res) {
+          settled = true;
           var data = { t: Date.now(), repo: res[0], releases: res[1] || [] };
           store(cacheKey, JSON.stringify(data));
           render(data);
         })
         .catch(function () {
-          card.setAttribute('data-release-state', 'error');
-          setTag('GitHub', '');
-          setRelease('status', 'Could not reach GitHub just now. The latest version is always on the releases page.');
-          enableLink(apkBtn, ghUrls.releases, true);
-          $('span', apkBtn).textContent = 'Download from GitHub';
-          disableLink(notesBtn, '');
-          setGh('note', 'Could not reach GitHub just now.');
+          // Give the saved copy a moment to arrive before showing a fault.
+          setTimeout(function () {
+            if (shown) return;
+            settled = true;
+            card.setAttribute('data-release-state', 'error');
+            setTag('GitHub', '');
+            setRelease('status', 'Could not reach GitHub just now. The latest version is always on the releases page.');
+            enableLink(apkBtn, ghUrls.releases, true);
+            $('span', apkBtn).textContent = 'Download from GitHub';
+            disableLink(notesBtn, '');
+            setGh('note', 'Could not reach GitHub just now.');
+          }, 1500);
         });
     }
   }

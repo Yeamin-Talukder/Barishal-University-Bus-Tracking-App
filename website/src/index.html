@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>BU Bus Tracker – University of Barishal Bus Schedule App</title>
-  <meta name="description" content="Free app for University of Barishal buses: official schedules for students, teachers and staff, every stop and an offline map. Live tracking coming soon.">
+  <meta name="description" content="Free app for University of Barishal buses: official schedules for students, teachers and staff, every stop and an offline map. Live tracking is being tested now.">
   <meta name="keywords" content="University of Barishal bus, BU bus schedule, Barishal University bus tracker, BU bus app, Barishal bus map, বরিশাল বিশ্ববিদ্যালয় বাস, ববি বাসের সময়সূচি, বাস ট্র্যাকার">
   <link rel="canonical" href="{{SITE_URL}}">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -18,7 +18,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="BU Bus Tracker">
   <meta property="og:title" content="BU Bus Tracker – University of Barishal buses, on the map">
-  <meta property="og:description" content="Official bus schedules, every stop and an offline map of Barishal in one free app. Live bus tracking is coming soon.">
+  <meta property="og:description" content="Official bus schedules, every stop and an offline map of Barishal in one free app. Live bus tracking is being tested now.">
   <meta property="og:url" content="{{SITE_URL}}">
   <meta property="og:image" content="{{SITE_URL}}assets/og-image.png">
   <meta property="og:image:width" content="1200">
@@ -318,13 +318,13 @@
           <article class="card feature reveal" style="--d:60ms">
             <span class="badge-icon amber"><svg class="i"><use href="#i-calendar"/></svg></span>
             <h3>The official bus schedule</h3>
-            <p>Every departure for students, teachers and staff, with the buses named for each trip, from the university's own Bus Schedule.</p>
+            <p>Every departure for students, teachers and staff, with the buses named for each trip. Switch a route between its two directions with one tap.</p>
             <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
           </article>
           <article class="card feature reveal" style="--d:120ms">
             <span class="badge-icon teal"><svg class="i"><use href="#i-route"/></svg></span>
             <h3>Routes and stops on the map</h3>
-            <p>See where each route runs, tap a stop to see which routes call there, and jump straight to it on the map.</p>
+            <p>See where each route runs, search the stops by name or filter them by route, and tap one to see which buses are on their way.</p>
             <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
           </article>
           <article class="card feature reveal">
@@ -345,20 +345,38 @@
             <p>Open it and go. Only bus drivers and transport office staff sign in, with their Google account.</p>
             <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
           </article>
+          <article class="card feature reveal">
+            <span class="badge-icon amber"><svg class="i"><use href="#i-layers"/></svg></span>
+            <h3>Try it with test buses</h3>
+            <p>Run pretend buses on your own phone to see tracking at work. Nothing is sent anywhere, nobody else sees them, and each is named TEST.</p>
+            <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
+          </article>
+          <article class="card feature reveal" style="--d:60ms">
+            <span class="badge-icon river"><svg class="i"><use href="#i-map"/></svg></span>
+            <h3>A map that explains itself</h3>
+            <p>One tap for a key to every marker, for all routes at once, for the university, or for where you are standing.</p>
+            <span class="tag ok"><svg class="i"><use href="#i-check"/></svg>Available</span>
+          </article>
           <article class="card feature soon reveal">
             <span class="badge-icon amber"><svg class="i"><use href="#i-radio"/></svg></span>
             <h3>Live bus tracking</h3>
-            <p>Watch the buses move on the map in real time, shared from the driver's phone during each trip.</p>
+            <p>Buses glide along their route in real time. Follow one and the map turns to face the way it is going, like a navigation app.</p>
             <span class="tag soon"><span class="live-dot"></span>In testing</span>
           </article>
           <article class="card feature soon reveal" style="--d:60ms">
             <span class="badge-icon red"><svg class="i"><use href="#i-timer"/></svg></span>
             <h3>Arrival time at your stop</h3>
-            <p>How many minutes until the bus reaches your stop, worked out along the real route, not as the crow flies.</p>
+            <p>How many minutes until each bus reaches your stop, which way it is going and how far away it is, measured along the real route.</p>
             <span class="tag soon">In testing</span>
           </article>
           <article class="card feature soon reveal" style="--d:120ms">
             <span class="badge-icon river"><svg class="i"><use href="#i-bell"/></svg></span>
+            <h3>Predictions, even offline</h3>
+            <p>When there is no live position, the app shows where a bus probably is, from the timetable and where it was last seen. Always marked as a prediction.</p>
+            <span class="tag soon">In testing</span>
+          </article>
+          <article class="card feature soon reveal">
+            <span class="badge-icon teal"><svg class="i"><use href="#i-bell"/></svg></span>
             <h3>Announcements</h3>
             <p>Route changes, delays and notices from the transport office, right on the map. Push notifications come later.</p>
             <span class="tag soon">In testing</span>
@@ -397,6 +415,19 @@
             <p>The bus glides along its route on your map, with its next stop and an estimate of when it gets there.</p>
           </li>
         </ol>
+
+        <aside class="card try reveal" aria-labelledby="try-title">
+          <div class="try-copy">
+            <p class="eyebrow">No bus on the road yet?</p>
+            <h3 id="try-title">See it working in half a minute</h3>
+            <p>The app can run pretend buses along the real routes, on your phone only. Nothing is sent to the server, nobody else sees them, and they vanish when you stop.</p>
+          </div>
+          <ol class="try-steps">
+            <li><span>1</span><div><b>Open Profile</b>and tap <i>Test the system</i>.</div></li>
+            <li><span>2</span><div><b>Tap "Add a set"</b>for one bus each way on every route.</div></li>
+            <li><span>3</span><div><b>Start, then watch the map.</b>Follow a bus to see the map turn with it.</div></li>
+          </ol>
+        </aside>
       </div>
     </section>
 
@@ -406,12 +437,16 @@
         <header class="section-head reveal">
           <p class="eyebrow">Screens</p>
           <h2 id="screens-title">See the app</h2>
-          <p>Real screenshots of the current version, not mock-ups.</p>
+          <p>Real screenshots of the current version, not mock-ups. The buses in the first one are the app's own test buses.</p>
         </header>
       </div>
       <div class="gallery-wrap reveal">
         <button class="icon-btn gallery-nav prev" type="button" aria-label="Previous screenshot"><svg class="i"><use href="#i-left"/></svg></button>
         <div class="gallery" tabindex="0" aria-label="App screenshots">
+          <figure class="shot">
+            <div class="phone"><img src="assets/screens/tracking.webp" width="390" height="844" loading="lazy" alt="A bus on its route on the map, with its next stop, arrival estimate, speed and direction. The buses are test buses and the map says so."></div>
+            <figcaption><b>Tracking a bus</b>Next stop, arrival and speed, shown here with test buses</figcaption>
+          </figure>
           <figure class="shot">
             <div class="phone"><img src="assets/screens/map-light.webp" width="390" height="844" loading="lazy" alt="Light map with the student bus routes around the University of Barishal"></div>
             <figcaption><b>Map</b>Routes around campus, in light mode</figcaption>
@@ -431,6 +466,10 @@
           <figure class="shot">
             <div class="phone"><img src="assets/screens/profile.webp" width="390" height="844" loading="lazy" alt="Settings screen with theme choice and the offline map details"></div>
             <figcaption><b>Settings</b>Theme and offline map</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="phone"><img src="assets/screens/test-mode.webp" width="390" height="844" loading="lazy" alt="Test the system screen with six pretend buses running on the three routes"></div>
+            <figcaption><b>Test mode</b>Pretend buses, on your phone only</figcaption>
           </figure>
         </div>
         <button class="icon-btn gallery-nav next" type="button" aria-label="Next screenshot"><svg class="i"><use href="#i-right"/></svg></button>
@@ -455,7 +494,8 @@
               <ul>
                 <li>Offline map of the bus routes, checked in airplane mode</li>
                 <li>The official schedule: 11 timetables, 101 departures</li>
-                <li>Routes and stops on the map</li>
+                <li>Routes and stops on the map, with search and a key to the map</li>
+                <li>A test mode that runs pretend buses on your own phone</li>
                 <li>Tools for the transport office to manage stops, the schedule, buses and staff</li>
               </ul>
             </div>
@@ -469,6 +509,7 @@
                 <li>Driver mode: sharing the bus's position during a trip</li>
                 <li>Buses moving on the map in real time</li>
                 <li>Arrival time at your stop on routes 01 to 03</li>
+                <li>Predictions when there is no live position, also offline</li>
                 <li>Announcements from the transport office in the app</li>
               </ul>
             </div>
@@ -490,8 +531,9 @@
               <p class="tl-label">Later</p>
               <h3>More phones</h3>
               <ul>
+                <li>A final signing key, then a Google Play listing</li>
                 <li>iPhone version</li>
-                <li>Google Play listing</li>
+                <li>Teacher and staff routes on the map</li>
               </ul>
             </div>
           </li>
@@ -527,6 +569,7 @@
             </dl>
 
             <p class="dl-status" data-release="status">Looking for the latest version…</p>
+            <p class="dl-files" data-release="files" hidden></p>
 
             <div class="dl-actions">
               <a class="btn btn-primary btn-lg" data-release-link="apk" href="#download" aria-disabled="true">
@@ -572,6 +615,7 @@
               <li><b>Tap Install</b>, then open BU Bus Tracker. The offline map sets itself up on first launch.</li>
             </ol>
             <p class="dim">Google Play Protect may show a warning because the app is not from the Play Store yet. Updating works the same way: install the new APK over the old one.</p>
+            <p class="dim">Early-access builds are signed with a development key. When the app moves to its final key, this version will need uninstalling once before the new one installs.</p>
           </article>
         </div>
       </div>
@@ -626,6 +670,14 @@
             <summary><span class="q-num">04</span><span class="q-text">When will live bus tracking be available?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
             <div class="faq-a"><p>It is built and being tested now, and will be switched on for everyone once it has been tried on real buses. New versions are published on this page and on GitHub.</p></div>
           </details>
+          <details class="faq-item reveal" style="--d:175ms">
+            <summary><span class="q-num">+</span><span class="q-text">Can I see how it works before the buses are live?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>Yes. Open Profile, tap <i>Test the system</i>, add a set of pretend buses and start them. They run on your phone only, are named TEST, and disappear when you stop the test.</p></div>
+          </details>
+          <details class="faq-item reveal" style="--d:190ms">
+            <summary><span class="q-num">+</span><span class="q-text">What is a "predicted" bus?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
+            <div class="faq-a"><p>When there is no live position for a bus, the app can show where it probably is, worked out from the timetable or from where the bus was last seen. It has a dashed marker and always says <i>Predicted</i>. The timetable does not say which days it runs, so on a holiday a predicted bus may not really be on the road.</p></div>
+          </details>
           <details class="faq-item reveal" style="--d:200ms">
             <summary><span class="q-num">05</span><span class="q-text">Which routes are included?</span><span class="q-icon" aria-hidden="true"><svg class="i"><use href="#i-chevron"/></svg></span></summary>
             <div class="faq-a"><p>Student routes 01 to 03, teacher routes 04 to 07 and staff routes 04, 05, 06 and 08, taken from the university's official bus schedule.</p></div>
@@ -669,6 +721,15 @@
       </div>
     </section>
   </main>
+
+  <div class="dock" data-dock hidden>
+    <img src="assets/icons/apple-touch-icon.png" alt="" width="40" height="40">
+    <div class="dock-text">
+      <b>BU Bus Tracker</b>
+      <span data-dock-meta>Free for Android</span>
+    </div>
+    <a class="btn btn-primary" data-dock-link href="#download"><svg class="i"><use href="#i-download"/></svg><span>Download</span></a>
+  </div>
 
   <footer class="site-footer">
     <div class="container footer-grid">

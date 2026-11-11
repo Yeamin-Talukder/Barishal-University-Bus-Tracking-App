@@ -1166,6 +1166,47 @@ Details: `website/README.md`.
   scrolling, no console errors. Not yet checked on a real phone or in
   Firefox or Safari.
 
+## Website update for version 1.0.0 (11 November 2026)
+
+The site was brought up to date with the app as released, and its phone
+layout was repaired.
+
+- **Phone layout fault fixed.** Once a release existed, the long SHA-256
+  checksum made the download section 619 px wide on a 390 px phone, so the
+  whole page scrolled sideways and the menu button sat off screen. The
+  download columns may now shrink (`minmax(0, ...)`). Measured after: 390 px
+  wide, no sideways overflow, in all four views.
+- **New on the page:** twelve feature cards (test mode, the map key and
+  predictions added; the others reworded to match the app), a "See it
+  working in half a minute" block about the test buses, two more real
+  screenshots (tracking a bus, the test screen; both show test buses and
+  are captioned as such), roadmap and FAQ entries for test mode and
+  predicted buses, a link to the 32-bit APK, the development-key note, and
+  a download bar that stays at the bottom on phones.
+- **Screenshot frames** no longer draw a camera cut-out; it covered the
+  app's route buttons.
+- **Parts marked hidden stay hidden.** The checksum row and the QR box were
+  given a layout by their class, which overrode `hidden`, so they showed
+  empty when there was nothing to put in them.
+- **Download details when GitHub will not answer.** GitHub allows 60
+  unsigned requests an hour from one network. The site's own test captures
+  used them up, and the download card went blank; a campus network could do
+  the same. `website/build.py` now saves GitHub's answer as `release.json`
+  when the site is built, the page falls back to it and says "Figures saved
+  on <date>", and the deploy workflow rebuilds every six hours (and passes
+  the workflow's token to the build) to keep that copy fresh.
+- **Tools:** `shoot_site.mjs` and `capture_screens.mjs` left dozens of
+  headless Edge processes behind and could hang for ever. They now close
+  every process they started (found by the profile folder of that run),
+  stop after a time limit, and run without a GPU process.
+- **Checked** in headless Edge at 390 px and 1280 px, dark and light: no
+  sideways overflow, no script errors; the saved-copy path and the
+  "could not reach GitHub" path were both exercised while GitHub was in
+  fact refusing requests. **Not checked:** a real phone, Firefox, Safari,
+  the live-from-GitHub path after these changes (it is unchanged code, but
+  the request limit had not reset), and the scheduled rebuild, which can
+  only run once this is pushed.
+
 ## Verification
 
 | Check | Result |

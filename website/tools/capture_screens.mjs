@@ -9,7 +9,7 @@
 // Each shot opens the app fresh in a phone viewport, optionally taps through
 // the app, waits for the map to draw, and saves a WebP.
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -27,6 +27,17 @@ const SHOTS = [
   { name: 'schedule', scheme: 'light', wait: 14000, taps: [[140, 786, 4000]] },
   { name: 'stops', scheme: 'dark', wait: 9000, taps: [[234, 786, 4000]] },
   { name: 'profile', scheme: 'light', wait: 9000, taps: [[328, 786, 4000]] },
+  // The test screen with a ready-made set of pretend buses running.
+  {
+    name: 'test-mode', scheme: 'dark', wait: 12000, hash: '#/test-drive',
+    taps: [[286, 412, 1500], [195, 262, 3000]],
+  },
+  // The same pretend buses on the map, with one of them opened. They are
+  // labelled TEST and the map says "Test mode", so it cannot pass for live.
+  {
+    name: 'tracking', scheme: 'dark', wait: 12000, hash: '#/test-drive',
+    taps: [[286, 412, 1500], [195, 262, 2500], [195, 318, 32000], [115, 765, 7000]],
+  },
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -73,17 +84,37 @@ async function tap(cdp, x, y) {
   }
 }
 
+const PROFILE_NAME = `edge-cdp-profile-${Date.now()}`;
+
+// Edge starts helper processes of its own, and they are not children of
+// the one started here, so closing that one leaves them running. This ends
+// every Edge process that was started with this run's profile folder.
+function closeEdge(edge) {
+  try { edge.kill(); } catch {}
+  try {
+    spawnSync('powershell', ['-NoProfile', '-Command',
+      `Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -like '*${PROFILE_NAME}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`,
+    ], { stdio: 'ignore' });
+  } catch {}
+}
+
 async function main() {
   const out = resolve(outDir);
   mkdirSync(out, { recursive: true });
   // Keep Edge's throwaway profile off drive C:, which is nearly full.
   // A fresh folder each run: Edge can keep the last one locked for a while.
-  const profile = resolve('build', `edge-cdp-profile-${Date.now()}`);
+  const profile = resolve('build', PROFILE_NAME);
   const edge = spawn(EDGE, [
     '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`,
     '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars',
     '--no-first-run', '--window-size=390,844', 'about:blank',
   ], { stdio: 'ignore' });
+  // If the browser hangs, give up instead of waiting for ever.
+  const watchdog = setTimeout(() => {
+    console.error('Gave up after 420 seconds: the browser stopped answering.');
+    closeEdge(edge);
+    process.exit(2);
+  }, 420_000);
 
   try {
     await waitForDevtools();
@@ -97,7 +128,12 @@ async function main() {
       await cdp.send('Emulation.setEmulatedMedia', {
         features: [{ name: 'prefers-color-scheme', value: shot.scheme }],
       });
-      await cdp.send('Page.navigate', { url: base });
+      // The app keeps its own theme choice (dark unless changed), so the
+      // choice is put in its storage before it starts.
+      await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
+        source: `try { localStorage.setItem('flutter.app.themeMode', JSON.stringify('${shot.scheme}')); } catch (e) {}`,
+      });
+      await cdp.send('Page.navigate', { url: base + (shot.hash ?? '') });
       await sleep(shot.wait);
       for (const [x, y, after] of shot.taps ?? []) {
         await tap(cdp, x, y);
@@ -111,7 +147,8 @@ async function main() {
       await fetch(`http://127.0.0.1:${PORT}/json/close/${target.id}`);
     }
   } finally {
-    edge.kill();
+    clearTimeout(watchdog);
+    closeEdge(edge);
   }
 }
 

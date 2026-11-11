@@ -81,13 +81,14 @@ No account is needed to use the app. It is built with Flutter, MapLibre and Open
 ## Screenshots
 
 <p align="center">
+  <img src="website/src/assets/screens/tracking.webp" alt="A test bus on its route with its next stop, arrival estimate and speed" width="200">
   <img src="website/src/assets/screens/map-dark.webp" alt="Map of the University of Barishal with the student bus routes" width="200">
   <img src="website/src/assets/screens/schedule.webp" alt="University of Barishal bus schedule for student route 01 in Bangla and English" width="200">
   <img src="website/src/assets/screens/stops.webp" alt="Bus stops in Barishal with the routes that call at each one" width="200">
   <img src="website/src/assets/screens/profile.webp" alt="Settings with theme choice and offline map details" width="200">
 </p>
 
-<p align="center"><sub>Real screenshots of the current version. Map data © OpenStreetMap contributors.</sub></p>
+<p align="center"><sub>Real screenshots of the current version. The buses in the first one are the app's own test buses. Map data © OpenStreetMap contributors.</sub></p>
 
 ## How live tracking works
 

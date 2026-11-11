@@ -7,7 +7,7 @@
 // Usage: node website/tools/shoot_site.mjs [url] [outDir]
 //   e.g. node website/tools/shoot_site.mjs http://localhost:5700/ build/site-shots
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -60,14 +60,35 @@ async function evaluate(cdp, expression) {
   return r.result.value;
 }
 
+const PROFILE_NAME = `edge-site-profile-${Date.now()}`;
+
+// Edge starts helper processes of its own, and they are not children of
+// the one started here, so closing that one leaves them running. This ends
+// every Edge process that was started with this run's profile folder.
+function closeEdge(edge) {
+  try { edge.kill(); } catch {}
+  try {
+    spawnSync('powershell', ['-NoProfile', '-Command',
+      `Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -like '*${PROFILE_NAME}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`,
+    ], { stdio: 'ignore' });
+  } catch {}
+}
+
 async function main() {
   const out = resolve(outDir);
   mkdirSync(out, { recursive: true });
   const edge = spawn(EDGE, [
     '--headless=new', `--remote-debugging-port=${PORT}`,
-    `--user-data-dir=${resolve('build', `edge-site-profile-${Date.now()}`)}`,
-    '--hide-scrollbars', '--no-first-run', 'about:blank',
+    `--user-data-dir=${resolve('build', PROFILE_NAME)}`,
+    '--hide-scrollbars', '--no-first-run', '--disable-gpu', '--disable-extensions',
+    '--disable-background-networking', 'about:blank',
   ], { stdio: 'ignore' });
+  // If the browser hangs, give up instead of waiting for ever.
+  const watchdog = setTimeout(() => {
+    console.error('Gave up after 150 seconds: the browser stopped answering.');
+    closeEdge(edge);
+    process.exit(2);
+  }, 150_000);
   try {
     await devtools();
     for (const v of VIEWS) {
@@ -104,7 +125,8 @@ async function main() {
       await fetch(`http://127.0.0.1:${PORT}/json/close/${target.id}`);
     }
   } finally {
-    edge.kill();
+    clearTimeout(watchdog);
+    closeEdge(edge);
   }
 }
 

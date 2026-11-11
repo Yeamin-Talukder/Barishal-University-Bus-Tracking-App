@@ -100,6 +100,8 @@ h1, h2, h3 { line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
 p { margin: 0; }
 .dim { color: var(--faint); }
 
+/* A part marked hidden stays hidden, whatever layout its class gives it. */
+[hidden] { display: none !important; }
 .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 
 .i {
@@ -271,10 +273,8 @@ p { margin: 0; }
   position: relative; border-radius: 42px; padding: 10px; background: var(--phone);
   box-shadow: var(--shadow), 0 0 0 1.5px var(--line-2), inset 0 0 0 2px rgba(255, 255, 255, .05);
 }
-.phone::before {
-  content: ""; position: absolute; top: 18px; left: 50%; width: 76px; height: 20px; translate: -50% 0;
-  background: var(--phone); border-radius: 12px; z-index: 2;
-}
+/* No camera cut-out is drawn on the frame: it sat on top of the app's
+   route buttons in the screenshots. */
 .phone img { width: 100%; height: auto; aspect-ratio: 390 / 844; object-fit: cover; border-radius: 33px; background: var(--surface-2); }
 /* Phone width follows the screen height (0.436 = 92% of the visual's height
    times the phone's 410:864 shape), so the hero always fits one screen. */
@@ -416,7 +416,6 @@ p { margin: 0; }
 .shot { flex: 0 0 auto; width: 250px; margin: 0; scroll-snap-align: center; transition: transform .35s ease; }
 .shot:hover { transform: translateY(-6px) rotate(-.6deg); }
 .shot .phone { border-radius: 36px; padding: 8px; }
-.shot .phone::before { top: 15px; width: 64px; height: 17px; }
 .shot .phone img { border-radius: 29px; }
 .shot figcaption { margin-top: 16px; text-align: center; color: var(--muted); font-size: 14px; }
 .shot figcaption b { display: block; color: var(--text); font-size: 15.5px; }
@@ -449,7 +448,11 @@ p { margin: 0; }
 
 /* ---------- Download ---------- */
 
-.download-grid { display: grid; grid-template-columns: 1.25fr 1fr; grid-template-rows: auto auto; gap: 20px; }
+.download-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 20px; }
+.download-grid > * { min-width: 0; }
+.dl-files { margin: -8px 0 0; font-size: 14px; color: var(--muted); }
+.dl-files a { color: var(--river); font-weight: 700; text-decoration: none; }
+.dl-files a:hover { text-decoration: underline; }
 .dl-card.android { grid-row: span 2; display: flex; flex-direction: column; gap: 22px; padding: 30px; }
 .dl-card.android::after {
   content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
@@ -467,9 +470,9 @@ p { margin: 0; }
 .dl-meta dd { margin: 4px 0 0; font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .dl-status { color: var(--muted); font-size: 15px; }
 .dl-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.dl-extra { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: auto; }
+.dl-extra { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: auto; min-width: 0; }
 .sha { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 100%; font-size: 13px; }
-.sha code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sha code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 0; width: 0; }
 .sha .icon-btn { width: 34px; height: 34px; flex: none; }
 .sha .icon-btn.copied { color: var(--teal); border-color: var(--teal); }
 .qr { display: flex; align-items: center; gap: 14px; color: var(--muted); font-size: 13.5px; max-width: 280px; }
@@ -614,6 +617,32 @@ p { margin: 0; }
 
 /* ---------- Responsive ---------- */
 
+/* ---------- Try it with test buses ---------- */
+
+.try {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 28px;
+  align-items: center; margin-top: 48px; padding: 32px;
+  background: linear-gradient(135deg, var(--brand-soft), transparent 60%), var(--surface);
+}
+.try .eyebrow { margin-bottom: 10px; }
+.try h3 { font-size: 1.5rem; margin-bottom: 10px; }
+.try-copy p:last-child { color: var(--muted); }
+.try-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.try-steps li {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px;
+}
+.try-steps li > span {
+  flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+  background: var(--brand); color: var(--on-brand); font-weight: 800; font-size: 14px;
+}
+.try-steps div { color: var(--muted); font-size: 15px; }
+.try-steps b { display: block; color: var(--text); }
+
+/* ---------- Download bar on phones ---------- */
+
+.dock { display: none; }
+
 @media (max-width: 1020px) {
   .hero { align-items: stretch; padding: 92px 0 0; }
   .hero-inner { display: flex; flex-direction: column; gap: 28px; min-height: calc(100svh - 92px); }
@@ -634,12 +663,32 @@ p { margin: 0; }
   .fc-live { left: 6%; top: 330px; bottom: auto; }
   .scroll-cue { display: none; }
   .feature-grid { grid-template-columns: repeat(2, 1fr); }
-  .download-grid { grid-template-columns: 1fr; }
+  .download-grid { grid-template-columns: minmax(0, 1fr); }
   .dl-card.android { grid-row: auto; }
   .oss { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 860px) {
+  /* The download is one thumb-tap away wherever the visitor has scrolled. */
+  .dock:not([hidden]) {
+    position: fixed; z-index: 40; left: 12px; right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 12px;
+    background: var(--header-bg); border: 1px solid var(--line-2, var(--line)); border-radius: 20px;
+    backdrop-filter: saturate(160%) blur(16px); -webkit-backdrop-filter: saturate(160%) blur(16px);
+    box-shadow: var(--shadow);
+    transform: translateY(140%); opacity: 0; pointer-events: none;
+    transition: transform .35s cubic-bezier(.2, .8, .2, 1), opacity .25s ease;
+  }
+  .dock.show { transform: none; opacity: 1; pointer-events: auto; }
+  .dock img { width: 40px; height: 40px; border-radius: 11px; flex: none; }
+  .dock-text { min-width: 0; flex: 1; display: grid; line-height: 1.25; }
+  .dock-text b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dock-text span { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dock .btn { flex: none; min-height: 44px; padding: 8px 16px; border-radius: 14px; }
+  /* Room for the bar, so it never covers the last line of the footer. */
+  .site-footer { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+
   .menu-toggle { display: inline-grid; }
   .nav-actions { margin-left: auto; }
   .nav-actions .btn-sm { display: none; }
@@ -686,7 +735,13 @@ p { margin: 0; }
   .fc-live { left: 2px; top: 270px; }
   .float-card { padding: 10px 12px 10px 10px; gap: 10px; }
   .fc-icon { width: 32px; height: 32px; border-radius: 10px; }
-  .feature-grid { grid-template-columns: 1fr; }
+  .feature-grid { grid-template-columns: 1fr; gap: 12px; }
+  .feature { display: grid; grid-template-columns: 44px 1fr; column-gap: 14px; row-gap: 4px; padding: 18px; }
+  .feature .badge-icon { grid-row: 1 / span 3; width: 44px; height: 44px; }
+  .feature h3 { margin-top: 0; font-size: 1.06rem; }
+  .feature p { font-size: 14.5px; }
+  .feature .tag { justify-self: start; margin-top: 6px; }
+  .try { grid-template-columns: 1fr; padding: 22px; }
   .faq-item summary { padding: 16px 14px 16px 16px; gap: 12px; font-size: 1rem; }
   .faq-a p { padding: 0 16px 18px 52px; }
   .card { padding: 22px; }
@@ -716,6 +771,7 @@ p { margin: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .dock:not([hidden]) { transition: none; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .reveal { opacity: 1; transform: none; }
