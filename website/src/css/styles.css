@@ -903,3 +903,87 @@ p { margin: 0; }
   .build-actions .build-dl { flex: 1; }
   .qr-frame canvas { width: 200px; height: 200px; }
 }
+
+/* ---------- Custom dropdowns ---------- */
+.select.dd { padding: 0; }
+.select.dd > .i { display: none; }
+.dd-native { position: absolute !important; width: 1px !important; height: 1px !important; opacity: 0; pointer-events: none; }
+.dd-btn {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 12px 8px 14px;
+  background: transparent; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; border-radius: inherit;
+}
+.dd-btn:disabled { cursor: default; }
+.dd.single .dd-chev { display: none; }
+.dd-btn .dd-text { flex: 1; min-width: 0; }
+.dd-btn .dd-title { font-size: 14.5px; }
+.dd-btn .dd-meta { font-size: 12px; }
+.dd-chev { width: 18px; height: 18px; color: var(--muted); flex: none; transition: transform .25s ease, color .2s; }
+.dd.open .dd-chev { transform: rotate(180deg); color: var(--brand); }
+.dd.open { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.dd-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.25; }
+.dd-title { display: flex; align-items: center; gap: 8px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-desc { color: var(--muted); font-size: 13px; }
+.dd-meta { color: var(--faint); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-badge {
+  padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  background: var(--brand-soft); color: var(--brand);
+}
+.dd-list {
+  position: absolute; z-index: 45; top: calc(100% + 8px); left: 0; min-width: 100%; width: max-content; max-width: min(340px, calc(100vw - 32px));
+  max-height: 320px; overflow: auto; margin: 0; padding: 6px; list-style: none;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px; box-shadow: var(--shadow);
+  opacity: 0; visibility: hidden; transform: translateY(-6px) scale(.98); transform-origin: top left;
+  transition: opacity .18s ease, transform .18s ease, visibility .18s;
+}
+.dd.up .dd-list { top: auto; bottom: calc(100% + 8px); transform-origin: bottom left; transform: translateY(6px) scale(.98); }
+.dd.open .dd-list { opacity: 1; visibility: visible; transform: none; }
+.dd-list:focus { outline: none; }
+.dd-opt {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; cursor: pointer;
+  transition: background-color .15s;
+}
+.dd-opt + .dd-opt { margin-top: 2px; }
+.dd-opt.active { background: var(--surface-2); }
+.dd-opt[aria-selected="true"] { background: var(--brand-soft); }
+.dd-opt .dd-text { flex: 1; min-width: 0; }
+.dd-check { width: 18px; height: 18px; color: var(--brand); flex: none; opacity: 0; stroke-width: 2.6; }
+.dd-opt[aria-selected="true"] .dd-check { opacity: 1; }
+.select-hero.dd { border-radius: 16px; }
+.select-hero .dd-btn { min-height: 56px; padding: 8px 12px 8px 16px; min-width: 132px; }
+.field .dd-btn { min-height: 52px; }
+
+/* Hero download count */
+.hero-dl-info { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 14px; }
+.hero-dl-info .hero-dl-note { margin: 0; }
+.hero-downloads {
+  display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px;
+  background: var(--brand-soft); color: var(--brand); font-size: 13.5px; font-weight: 700;
+}
+.hero-downloads[hidden] { display: none; }
+.hero-downloads .i { width: 15px; height: 15px; }
+.hero-downloads b { font-weight: 800; font-variant-numeric: tabular-nums; }
+@media (max-width: 1020px) { .hero-dl-info { justify-content: center; } }
+@media (max-width: 600px) {
+  .select-hero .dd-btn { min-width: 0; min-height: 54px; padding: 6px 10px 6px 12px; }
+  .select-hero .dd-meta { display: none; }
+  .select-hero .dd-list { left: auto; right: 0; transform-origin: top right; }
+  .hero-dl-info { gap: 6px 10px; margin-top: 10px; }
+}
+/* The open list must sit above the lines that follow the buttons. */
+.hero-ctas { position: relative; z-index: 6; }
+.dd-list { text-align: left; }
+@media (max-width: 600px) {
+  .select-hero .dd-badge { display: none; }
+  .select-hero .dd-list { width: min(300px, calc(100vw - 32px)); }
+  .hero-dl-info { margin-top: 8px; }
+  .hero-meta { margin-top: 12px; }
+}
+.dl-group { position: relative; }
+@media (max-width: 600px) {
+  /* The list spans the whole download group, so it never leaves the screen. */
+  .select-hero.dd { position: static; }
+  .select-hero .dd-list { left: 0; right: 0; width: auto; max-width: none; }
+  /* Keep the hero one screen tall: the line under the buttons already says
+     free, the Android version and the size. */
+  .hero-meta { display: none; }
+}

@@ -270,13 +270,139 @@
     return apksOf(release).sort(function (x, y) { return variantOf(x).rank - variantOf(y).rank; });
   }
   function versionOf(release) { return (release.tag_name || release.name || '').replace(/^v(?=\d)/, ''); }
-  function option(value, text, selected) {
+  // d: { title, desc, meta, badge } shown by the custom dropdown.
+  function option(value, text, selected, d) {
     var o = document.createElement('option');
     o.value = value;
     o.textContent = text;
     if (selected) o.selected = true;
+    d = d || {};
+    o.dataset.title = d.title || text;
+    if (d.desc) o.dataset.desc = d.desc;
+    if (d.meta) o.dataset.meta = d.meta;
+    if (d.badge) o.dataset.badge = d.badge;
     return o;
   }
+
+  /* ---------- Custom dropdown over a native <select> ----------
+     The select stays the source of truth (value, change event); a button
+     and a listbox draw it with titles, notes and badges. Keyboard: arrows,
+     Home/End, Enter/Space, Escape. */
+  var openDd = null;
+  function enhanceSelect(wrap) {
+    var sel = $('select', wrap);
+    if (!sel || wrap.dd) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'dd-btn';
+    btn.setAttribute('aria-haspopup', 'listbox');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', sel.getAttribute('aria-label') || '');
+    var list = document.createElement('ul');
+    list.className = 'dd-list';
+    list.setAttribute('role', 'listbox');
+    list.tabIndex = -1;
+    sel.classList.add('dd-native');
+    sel.tabIndex = -1;
+    sel.setAttribute('aria-hidden', 'true');
+    wrap.classList.add('dd');
+    wrap.insertBefore(btn, sel);
+    wrap.appendChild(list);
+    var active = 0;
+
+    function el(tag, cls, text) {
+      var e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text) e.textContent = text;
+      return e;
+    }
+    function body(o, withDesc) {
+      var box = el('span', 'dd-text');
+      var t = el('span', 'dd-title', o.dataset.title || o.textContent);
+      if (o.dataset.badge) t.appendChild(el('span', 'dd-badge', o.dataset.badge));
+      box.appendChild(t);
+      if (withDesc && o.dataset.desc) box.appendChild(el('span', 'dd-desc', o.dataset.desc));
+      if (o.dataset.meta) box.appendChild(el('span', 'dd-meta', o.dataset.meta));
+      return box;
+    }
+    function render() {
+      btn.textContent = '';
+      var cur = sel.options[sel.selectedIndex];
+      if (cur) btn.appendChild(body(cur, false));
+      btn.insertAdjacentHTML('beforeend', '<svg class="i dd-chev" aria-hidden="true"><use href="#i-chevron"/></svg>');
+      btn.disabled = sel.disabled || sel.options.length < 2;
+      wrap.classList.toggle('single', sel.options.length < 2);
+      list.textContent = '';
+      Array.prototype.forEach.call(sel.options, function (o, i) {
+        var li = el('li', 'dd-opt');
+        li.setAttribute('role', 'option');
+        li.id = (sel.dataset.ddId || (sel.dataset.ddId = 'dd' + Math.random().toString(36).slice(2, 8))) + '-' + i;
+        li.setAttribute('aria-selected', String(i === sel.selectedIndex));
+        li.appendChild(body(o, true));
+        li.insertAdjacentHTML('beforeend', '<svg class="i dd-check" aria-hidden="true"><use href="#i-check"/></svg>');
+        li.addEventListener('click', function () { choose(i); });
+        li.addEventListener('mousemove', function () { setActive(i); });
+        list.appendChild(li);
+      });
+    }
+    function setActive(i) {
+      var items = list.children;
+      if (!items.length) return;
+      active = (i + items.length) % items.length;
+      Array.prototype.forEach.call(items, function (li, k) { li.classList.toggle('active', k === active); });
+      list.setAttribute('aria-activedescendant', items[active].id);
+      items[active].scrollIntoView({ block: 'nearest' });
+    }
+    function open() {
+      if (btn.disabled) return;
+      if (openDd && openDd !== api) openDd.close();
+      wrap.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      // Open upwards when there is no room below.
+      var r = wrap.getBoundingClientRect();
+      wrap.classList.toggle('up', window.innerHeight - r.bottom < 260 && r.top > 300);
+      setActive(sel.selectedIndex);
+      list.focus({ preventScroll: true });
+      openDd = api;
+    }
+    function close(focusBtn) {
+      wrap.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      if (openDd === api) openDd = null;
+      if (focusBtn) btn.focus();
+    }
+    function choose(i) {
+      if (i !== sel.selectedIndex) {
+        sel.selectedIndex = i;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      render();
+      close(true);
+    }
+    btn.addEventListener('click', function () { wrap.classList.contains('open') ? close() : open(); });
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); open(); }
+    });
+    list.addEventListener('keydown', function (e) {
+      var k = e.key;
+      if (k === 'ArrowDown') setActive(active + 1);
+      else if (k === 'ArrowUp') setActive(active - 1);
+      else if (k === 'Home') setActive(0);
+      else if (k === 'End') setActive(list.children.length - 1);
+      else if (k === 'Enter' || k === ' ') choose(active);
+      else if (k === 'Escape' || k === 'Tab') { close(k === 'Escape'); if (k === 'Tab') return; }
+      else return;
+      e.preventDefault();
+    });
+    var api = { render: render, close: close, wrap: wrap };
+    wrap.dd = api;
+    render();
+  }
+  function refreshDd(sel) { var w = sel && sel.closest('.select'); if (w && w.dd) w.dd.render(); }
+  document.addEventListener('click', function (e) {
+    if (openDd && !openDd.wrap.contains(e.target)) openDd.close();
+  });
+  $$('.select').forEach(enhanceSelect);
   function byName(list, name) { return list.filter(function (x) { return x.name === name; })[0] || null; }
 
   // The releases with an APK; the latest; the build in the hero; the version
@@ -372,12 +498,12 @@
     heroSelect.textContent = '';
     apks.forEach(function (a) {
       var v = variantOf(a);
-      // On a phone the size is in the line under the buttons, so the choice
-      // stays short enough to read.
-      var narrow = window.matchMedia('(max-width: 600px)').matches;
-      heroSelect.appendChild(option(a.name, v.label + (narrow ? '' : ' · ' + formatSize(a.size)), a === current));
+      heroSelect.appendChild(option(a.name, v.label, a === current, {
+        title: v.label, desc: v.desc, meta: formatSize(a.size), badge: v.best ? 'Best' : ''
+      }));
     });
     $('[data-hero-variant-wrap]').hidden = apks.length < 2;
+    refreshDd(heroSelect);
     renderHero();
   }
   heroSelect.addEventListener('change', function () {
@@ -413,9 +539,13 @@
     dl.releases.forEach(function (r) {
       var kind = r === dl.latest ? ' · Latest' : (r.prerelease ? ' · Pre-release' : '');
       var when = r.published_at ? ' · ' + formatDate(r.published_at) : '';
-      pickRelease.appendChild(option(r.tag_name, (r.tag_name || r.name) + kind + when, r === chosen));
+      pickRelease.appendChild(option(r.tag_name, (r.tag_name || r.name) + kind + when, r === chosen, {
+        title: r.tag_name || r.name, badge: r === dl.latest ? 'Latest' : (r.prerelease ? 'Pre-release' : ''),
+        meta: (r.published_at ? formatDate(r.published_at) : '') + ' · ' + apksOf(r).length + ' build' + (apksOf(r).length === 1 ? '' : 's')
+      }));
     });
     pickRelease.disabled = dl.releases.length < 2;
+    refreshDd(pickRelease);
     $('[data-pickers]').hidden = false;
     fillBuilds();
   }
@@ -425,9 +555,13 @@
     pickBuild.textContent = '';
     apks.forEach(function (a) {
       var v = variantOf(a);
-      pickBuild.appendChild(option(a.name, v.label + ' · ' + formatSize(a.size) + (v.best ? ' · recommended' : ''), a === current));
+      pickBuild.appendChild(option(a.name, v.label + ' · ' + formatSize(a.size), a === current, {
+        title: v.label, desc: v.desc, badge: v.best ? 'Recommended' : '',
+        meta: formatSize(a.size) + ' · ' + formatCount(a.download_count || 0) + ' download' + (a.download_count === 1 ? '' : 's')
+      }));
     });
     pickBuild.disabled = apks.length < 2;
+    refreshDd(pickBuild);
     renderPick();
   }
   pickRelease.addEventListener('change', function () {
@@ -499,6 +633,7 @@
       q.addEventListener('click', function () {
         dl.pickLabel = v.label;
         pickBuild.value = a.name;
+        refreshDd(pickBuild);
         renderPick();
         var panel = $('.qr-panel');
         panel.classList.remove('flash');
@@ -595,6 +730,12 @@
     var latest = releases.filter(function (r) { return !r.prerelease; })[0] || releases[0];
     if (latest) {
       setGh('downloads', formatCount(total));
+      var hd = $('[data-hero-downloads]');
+      if (hd) {
+        $('b', hd).textContent = formatCount(total);
+        $('span', hd).textContent = total === 1 ? 'download' : 'downloads';
+        hd.hidden = false;
+      }
       setGh('version', latest.tag_name || '—');
       setGh('note', note || 'Live from GitHub.');
       showReleases(releases, latest);
