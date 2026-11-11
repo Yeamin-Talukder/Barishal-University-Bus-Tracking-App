@@ -165,6 +165,7 @@
       <symbol id="i-drive" viewBox="0 0 24 24"><path d="M22 12H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/><path d="M6 16h.01M10 16h.01"/></symbol>
       <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5z"/></symbol>
       <symbol id="i-android" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="m17.6 9.5 1.7-2.9a.4.4 0 1 0-.7-.4l-1.7 3a10.4 10.4 0 0 0-4.9-1c-1.8 0-3.4.4-4.9 1l-1.7-3a.4.4 0 1 0-.7.4l1.7 2.9A9.8 9.8 0 0 0 1.5 17h21a9.8 9.8 0 0 0-4.9-7.5zM7 14.4a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm10 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></symbol>
       <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h4v4h-4z"/></symbol>
       <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></symbol>
       <!-- The app icon's pin and bus, for the animated hero map -->
@@ -221,15 +222,26 @@
           <p class="lead reveal" style="--d:160ms">Bus schedules for students, teachers and staff, every stop, and an offline map of Barishal, in one free app. Live bus tracking is being tested now.</p>
           <p class="lead-bn reveal" lang="bn" style="--d:220ms">বরিশাল বিশ্ববিদ্যালয়ের বাসের সময়সূচি, স্টপেজ আর অফলাইন ম্যাপ, এক অ্যাপে।</p>
           <div class="hero-ctas reveal" style="--d:280ms">
-            <a class="btn btn-primary btn-lg" href="#download" data-download-cta>
-              <svg class="i"><use href="#i-android"/></svg>
-              <span><small>Get it for</small>Android</span>
-            </a>
+            <!-- Download: main button, build choice, and a QR code for phones -->
+            <div class="dl-group" data-hero-dl>
+              <a class="btn btn-primary btn-lg dl-main" href="#download" data-hero-apk>
+                <svg class="i"><use href="#i-android"/></svg>
+                <span><small data-hero-sub>Get it for</small><b data-hero-label>Android</b></span>
+              </a>
+              <span class="select select-hero" data-hero-variant-wrap hidden>
+                <select data-hero-variant aria-label="Choose which Android build to download"></select>
+                <svg class="i" aria-hidden="true"><use href="#i-chevron"/></svg>
+              </span>
+              <button class="icon-btn qr-btn" type="button" data-qr-open aria-label="Show a QR code to download the app on your phone" title="Scan to install on your phone" disabled>
+                <svg class="i"><use href="#i-qr"/></svg>
+              </button>
+            </div>
             <a class="btn btn-ghost btn-lg" data-gh-link="repo" href="#open-source">
               <svg class="i"><use href="#i-github"/></svg>
               <span><small>Source code</small>GitHub</span>
             </a>
           </div>
+          <p class="hero-dl-note reveal" style="--d:300ms" data-hero-note hidden></p>
           <ul class="hero-meta reveal" style="--d:340ms" aria-label="At a glance">
             <li><svg class="i"><use href="#i-check"/></svg>Free, no ads</li>
             <li><svg class="i"><use href="#i-check"/></svg>No account needed</li>
@@ -561,15 +573,25 @@
               <span class="tag" data-release-tag>Checking…</span>
             </div>
 
+            <div class="dl-pickers" data-pickers hidden>
+              <label class="field">
+                <span class="field-label">Version</span>
+                <span class="select"><select data-pick-release aria-label="Choose a version"></select><svg class="i" aria-hidden="true"><use href="#i-chevron"/></svg></span>
+              </label>
+              <label class="field">
+                <span class="field-label">Build</span>
+                <span class="select"><select data-pick-build aria-label="Choose a build for your phone"></select><svg class="i" aria-hidden="true"><use href="#i-chevron"/></svg></span>
+              </label>
+            </div>
+
             <dl class="dl-meta">
               <div><dt><svg class="i"><use href="#i-tag"/></svg>Version</dt><dd data-release="version">—</dd></div>
               <div><dt><svg class="i"><use href="#i-calendar"/></svg>Released</dt><dd data-release="date">—</dd></div>
               <div><dt><svg class="i"><use href="#i-drive"/></svg>Size</dt><dd data-release="size">—</dd></div>
-              <div><dt><svg class="i"><use href="#i-download"/></svg>Downloads</dt><dd data-release="downloads">—</dd></div>
+              <div><dt><svg class="i"><use href="#i-download"/></svg>Build downloads</dt><dd data-release="downloads">—</dd></div>
             </dl>
 
             <p class="dl-status" data-release="status">Looking for the latest version…</p>
-            <p class="dl-files" data-release="files" hidden></p>
 
             <div class="dl-actions">
               <a class="btn btn-primary btn-lg" data-release-link="apk" href="#download" aria-disabled="true">
@@ -586,13 +608,29 @@
                 <code data-release="sha"></code>
                 <button class="icon-btn copy" type="button" aria-label="Copy SHA-256 checksum" data-copy-sha><svg class="i"><use href="#i-copy"/></svg></button>
               </div>
-              <div class="qr" data-qr hidden>
-                <canvas width="132" height="132" aria-label="QR code to download the app on your phone" role="img"></canvas>
-                <span>Scan with your phone to download</span>
-              </div>
-              <a class="all-releases" data-gh-link="releases" href="#open-source">All versions<svg class="i"><use href="#i-arrow"/></svg></a>
+              <a class="all-releases" data-gh-link="releases" href="#open-source">All versions on GitHub<svg class="i"><use href="#i-arrow"/></svg></a>
+            </div>
+
+            <div class="builds" data-builds hidden>
+              <p class="builds-title">Every build of this version</p>
+              <ul class="builds-list" data-builds-list></ul>
+              <p class="builds-help dim">Not sure? Take the 64-bit build. Choose 32-bit only if the 64-bit one says it cannot be installed on your phone.</p>
             </div>
           </article>
+
+          <aside class="card qr-panel reveal" style="--d:100ms" aria-labelledby="qr-panel-title">
+            <div class="qr-card" data-qr-card="panel">
+              <span class="qr-pill"><svg class="i"><use href="#i-qr"/></svg>Scan to install</span>
+              <h3 class="qr-title" id="qr-panel-title">On a computer?</h3>
+              <p class="qr-text">Scan and the APK downloads straight to your phone.</p>
+              <div class="qr-frame">
+                <canvas width="560" height="560" data-qr-canvas role="img" aria-label="QR code that downloads the chosen build of the app"></canvas>
+                <span class="qr-empty" data-qr-empty>The code appears here once a version is published.</span>
+              </div>
+              <p class="qr-file" data-qr-file>Waiting for the latest version</p>
+              <p class="qr-hint"><svg class="i"><use href="#i-camera"/></svg><span>Use the camera or Google Lens. When it has downloaded, open the file and tap Install.</span></p>
+            </div>
+          </aside>
 
           <article class="card dl-card ios reveal" style="--d:100ms">
             <div class="dl-head">
@@ -721,6 +759,21 @@
       </div>
     </section>
   </main>
+
+  <!-- QR code pop-up, opened from the QR button next to the hero's download button -->
+  <dialog class="qr-dialog" data-qr-dialog aria-labelledby="qr-dialog-title">
+    <div class="qr-card" data-qr-card="dialog">
+      <button class="icon-btn qr-close" type="button" data-qr-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button>
+      <span class="qr-pill"><svg class="i"><use href="#i-qr"/></svg>Scan to install</span>
+      <h3 class="qr-title" id="qr-dialog-title">On a computer?</h3>
+      <p class="qr-text">Scan and the APK downloads straight to your phone.</p>
+      <div class="qr-frame">
+        <canvas width="560" height="560" data-qr-canvas role="img" aria-label="QR code that downloads the chosen build of the app"></canvas>
+      </div>
+      <p class="qr-file" data-qr-file></p>
+      <p class="qr-hint"><svg class="i"><use href="#i-camera"/></svg><span>Use the camera or Google Lens. When it has downloaded, open the file and tap Install.</span></p>
+    </div>
+  </dialog>
 
   <div class="dock" data-dock hidden>
     <img src="assets/icons/apple-touch-icon.png" alt="" width="40" height="40">

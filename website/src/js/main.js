@@ -251,54 +251,266 @@
       apks[0] || null;
   }
 
-  function drawQr(text) {
-    var box = $('[data-qr]', card);
-    if (!box || !text || !window.matchMedia('(min-width: 601px)').matches) return;
+  /* ---------- Builds, choices and QR codes ---------- */
+
+  function apksOf(release) {
+    return (release && release.assets || []).filter(function (a) { return /\.apk$/i.test(a.name); });
+  }
+  // What a build is for, in words a student understands.
+  function variantOf(a) {
+    var n = a.name;
+    if (/universal/i.test(n)) return { label: 'Universal', desc: 'Works on every phone, larger download', rank: 1 };
+    if (/arm64|aarch64/i.test(n)) return { label: '64-bit', desc: 'Almost every phone from the last eight years', rank: 0, best: true };
+    if (/armv7|armeabi|arm32/i.test(n)) return { label: '32-bit', desc: 'Older or low-cost phones', rank: 2 };
+    if (/x86_64/i.test(n)) return { label: 'x86 64-bit', desc: 'Emulators and some tablets', rank: 3 };
+    if (/x86/i.test(n)) return { label: 'x86', desc: 'Emulators', rank: 4 };
+    return { label: n.replace(/\.apk$/i, ''), desc: '', rank: 9 };
+  }
+  function sortedApks(release) {
+    return apksOf(release).sort(function (x, y) { return variantOf(x).rank - variantOf(y).rank; });
+  }
+  function versionOf(release) { return (release.tag_name || release.name || '').replace(/^v(?=\d)/, ''); }
+  function option(value, text, selected) {
+    var o = document.createElement('option');
+    o.value = value;
+    o.textContent = text;
+    if (selected) o.selected = true;
+    return o;
+  }
+  function byName(list, name) { return list.filter(function (x) { return x.name === name; })[0] || null; }
+
+  // The releases with an APK; the latest; the build in the hero; the version
+  // and build chosen in the download section. Choices are kept by tag and
+  // build name, because the data is replaced when GitHub's answer arrives.
+  var dl = { releases: [], latest: null, heroName: null, pickTag: null, pickLabel: null };
+
+  /* A QR code with the app icon in its middle. Error correction level Q
+     (25%) leaves room for the icon; the canvas is large so the code stays sharp. */
+  var qrLogo = new Image();
+  qrLogo.src = 'assets/icons/icon-192.png';
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function drawQr(canvas, text) {
+    if (!canvas || !text) return;
     function draw() {
-      if (!window.qrcode) return;
-      var qr = window.qrcode(0, 'M');
+      if (!window.qrcode) return false;
+      var qr = window.qrcode(0, 'Q');
       qr.addData(text);
       qr.make();
       var n = qr.getModuleCount();
-      var canvas = $('canvas', box);
-      var scale = Math.floor(canvas.width / n) || 1;
-      var offset = Math.floor((canvas.width - n * scale) / 2);
+      var size = canvas.width;
+      var cell = Math.floor(size / (n + 2));
+      var offset = Math.floor((size - n * cell) / 2);
       var ctx = canvas.getContext('2d');
       ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#0B1115';
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = '#0F1318';
       for (var r = 0; r < n; r++) {
         for (var c = 0; c < n; c++) {
-          if (qr.isDark(r, c)) ctx.fillRect(offset + c * scale, offset + r * scale, scale, scale);
+          if (qr.isDark(r, c)) ctx.fillRect(offset + c * cell, offset + r * cell, cell, cell);
         }
       }
-      box.hidden = false;
+      var logo = function () {
+        var box = Math.round(size * 0.2);
+        var x = Math.round((size - box) / 2);
+        ctx.fillStyle = '#fff';
+        roundRect(ctx, x - 10, x - 10, box + 20, box + 20, box * 0.3);
+        ctx.fill();
+        ctx.save();
+        roundRect(ctx, x, x, box, box, box * 0.24);
+        ctx.clip();
+        ctx.drawImage(qrLogo, x, x, box, box);
+        ctx.restore();
+      };
+      if (qrLogo.complete && qrLogo.naturalWidth) logo();
+      else qrLogo.addEventListener('load', logo, { once: true });
+      canvas.classList.add('ready');
+      return true;
     }
-    if (window.qrcode) draw();
-    else window.addEventListener('load', draw);
+    if (!draw()) window.addEventListener('load', draw, { once: true });
+  }
+  function fillQrCard(box, release, asset) {
+    if (!box || !release || !asset) return;
+    drawQr($('[data-qr-canvas]', box), asset.browser_download_url);
+    var empty = $('[data-qr-empty]', box);
+    if (empty) empty.hidden = true;
+    $('[data-qr-file]', box).textContent = 'Downloads ' + versionOf(release) + ' · ' +
+      variantOf(asset).label + (release === dl.latest ? ' (newest)' : '');
   }
 
-  /* The other APKs of the release, for phones the main one does not fit. */
-  function showOtherFiles(release, chosen) {
-    var box = $('[data-release="files"]', card);
-    if (!box) return;
-    var others = (release.assets || []).filter(function (a) {
-      return /\.apk$/i.test(a.name) && a.name !== chosen.name;
+  /* Hero: main button, build dropdown, QR button. */
+  var heroApk = $('[data-hero-apk]');
+  var heroSelect = $('[data-hero-variant]');
+  var qrOpen = $('[data-qr-open]');
+  function heroAsset() {
+    var apks = apksOf(dl.latest);
+    return byName(apks, dl.heroName) || pickApk(apks);
+  }
+  function renderHero() {
+    var a = heroAsset();
+    if (!a) return;
+    dl.heroName = a.name;
+    heroApk.setAttribute('href', a.browser_download_url);
+    $('[data-hero-sub]').textContent = 'Download ' + (dl.latest.tag_name || '');
+    $('[data-hero-label]').textContent = 'Android';
+    var note = $('[data-hero-note]');
+    note.textContent = variantOf(a).label + ' build · ' + formatSize(a.size) + ' · Android 7.0 or newer · Free';
+    note.hidden = false;
+    qrOpen.disabled = false;
+    setDock(a.browser_download_url, (dl.latest.tag_name || '') + ' · ' + variantOf(a).label + ' · ' + formatSize(a.size));
+  }
+  function setupHero() {
+    var apks = sortedApks(dl.latest);
+    var current = heroAsset();
+    heroSelect.textContent = '';
+    apks.forEach(function (a) {
+      var v = variantOf(a);
+      // On a phone the size is in the line under the buttons, so the choice
+      // stays short enough to read.
+      var narrow = window.matchMedia('(max-width: 600px)').matches;
+      heroSelect.appendChild(option(a.name, v.label + (narrow ? '' : ' · ' + formatSize(a.size)), a === current));
     });
-    if (!others.length) { box.hidden = true; return; }
-    box.textContent = '';
-    var what = /arm64/i.test(chosen.name) ? 'This file suits almost every phone. ' : '';
-    box.appendChild(document.createTextNode(what + 'Also available: '));
-    others.forEach(function (a, i) {
-      if (i) box.appendChild(document.createTextNode(', '));
-      var link = document.createElement('a');
-      link.href = a.browser_download_url;
-      var kind = /armv7|armeabi/i.test(a.name) ? 'older 32-bit phones' : (/x86/i.test(a.name) ? 'x86 devices' : a.name);
-      link.textContent = kind + ' (' + formatSize(a.size) + ')';
-      box.appendChild(link);
+    $('[data-hero-variant-wrap]').hidden = apks.length < 2;
+    renderHero();
+  }
+  heroSelect.addEventListener('change', function () {
+    dl.heroName = heroSelect.value;
+    renderHero();
+  });
+
+  var qrDialog = $('[data-qr-dialog]');
+  qrOpen.addEventListener('click', function () {
+    var a = heroAsset();
+    if (!a) return;
+    fillQrCard($('[data-qr-card="dialog"]'), dl.latest, a);
+    if (qrDialog.showModal) qrDialog.showModal();
+    else qrDialog.setAttribute('open', '');
+  });
+  $('[data-qr-close]').addEventListener('click', function () { qrDialog.close(); });
+  // A click on the dimmed backdrop closes it too.
+  qrDialog.addEventListener('click', function (e) { if (e.target === qrDialog) qrDialog.close(); });
+
+  /* Download section: version and build dropdowns, every build, QR panel. */
+  var pickRelease = $('[data-pick-release]');
+  var pickBuild = $('[data-pick-build]');
+  function pickedRelease() {
+    return dl.releases.filter(function (r) { return r.tag_name === dl.pickTag; })[0] || dl.latest;
+  }
+  function pickedAsset() {
+    var apks = apksOf(pickedRelease());
+    return apks.filter(function (a) { return variantOf(a).label === dl.pickLabel; })[0] || pickApk(apks);
+  }
+  function setupPickers() {
+    var chosen = pickedRelease();
+    pickRelease.textContent = '';
+    dl.releases.forEach(function (r) {
+      var kind = r === dl.latest ? ' · Latest' : (r.prerelease ? ' · Pre-release' : '');
+      var when = r.published_at ? ' · ' + formatDate(r.published_at) : '';
+      pickRelease.appendChild(option(r.tag_name, (r.tag_name || r.name) + kind + when, r === chosen));
     });
-    box.appendChild(document.createTextNode('.'));
-    box.hidden = false;
+    pickRelease.disabled = dl.releases.length < 2;
+    $('[data-pickers]').hidden = false;
+    fillBuilds();
+  }
+  function fillBuilds() {
+    var current = pickedAsset();
+    var apks = sortedApks(pickedRelease());
+    pickBuild.textContent = '';
+    apks.forEach(function (a) {
+      var v = variantOf(a);
+      pickBuild.appendChild(option(a.name, v.label + ' · ' + formatSize(a.size) + (v.best ? ' · recommended' : ''), a === current));
+    });
+    pickBuild.disabled = apks.length < 2;
+    renderPick();
+  }
+  pickRelease.addEventListener('change', function () {
+    dl.pickTag = pickRelease.value;
+    fillBuilds();
+  });
+  pickBuild.addEventListener('change', function () {
+    var a = byName(apksOf(pickedRelease()), pickBuild.value);
+    if (a) dl.pickLabel = variantOf(a).label;
+    renderPick();
+  });
+  function renderPick() {
+    var r = pickedRelease();
+    var a = pickedAsset();
+    var latest = r === dl.latest;
+    setTag(latest ? 'Latest' : (r.prerelease ? 'Pre-release' : 'Older version'), latest ? 'ok' : 'soon');
+    setRelease('version', r.tag_name || r.name || '—');
+    setRelease('date', r.published_at ? formatDate(r.published_at) : '—');
+    enableLink(notesBtn, r.html_url, true);
+    var shaWrap = $('[data-release="sha-wrap"]', card);
+    if (a) {
+      var v = variantOf(a);
+      dl.pickLabel = v.label;
+      setRelease('size', formatSize(a.size));
+      setRelease('downloads', formatCount(a.download_count || 0));
+      setRelease('status', (latest ? '' : 'This is an older version. ') +
+        v.label + ' build' + (v.desc ? ': ' + v.desc.charAt(0).toLowerCase() + v.desc.slice(1) : '') + '.');
+      enableLink(apkBtn, a.browser_download_url, false);
+      $('span', apkBtn).textContent = 'Download ' + v.label + ' APK (' + formatSize(a.size) + ')';
+      if (a.digest && /^sha256:/.test(a.digest)) {
+        setRelease('sha', a.digest.slice(7));
+        shaWrap.hidden = false;
+      } else {
+        shaWrap.hidden = true;
+      }
+      fillQrCard($('[data-qr-card="panel"]'), r, a);
+    }
+    renderBuildList(r, a);
+  }
+  function renderBuildList(release, chosen) {
+    var list = $('[data-builds-list]');
+    var apks = sortedApks(release);
+    list.textContent = '';
+    apks.forEach(function (a) {
+      var v = variantOf(a);
+      var li = document.createElement('li');
+      li.className = 'build' + (a === chosen ? ' chosen' : '');
+      li.innerHTML =
+        '<div class="build-info"><b class="build-name"></b><span class="build-desc"></span><span class="build-meta"></span></div>' +
+        '<div class="build-actions">' +
+        '<a class="btn btn-sm btn-ghost build-dl"><svg class="i"><use href="#i-download"/></svg><span>Download</span></a>' +
+        '<button type="button" class="icon-btn build-qr"><svg class="i"><use href="#i-qr"/></svg></button>' +
+        '</div>';
+      $('.build-name', li).textContent = v.label;
+      if (v.best) {
+        var tag = document.createElement('span');
+        tag.className = 'tag ok';
+        tag.textContent = 'Recommended';
+        $('.build-name', li).appendChild(tag);
+      }
+      $('.build-desc', li).textContent = v.desc;
+      $('.build-meta', li).textContent = formatSize(a.size) + ' · ' + formatCount(a.download_count || 0) +
+        ' download' + (a.download_count === 1 ? '' : 's') + ' · ' + a.name;
+      $('.build-dl', li).setAttribute('href', a.browser_download_url);
+      $('.build-dl', li).setAttribute('aria-label', 'Download the ' + v.label + ' build (' + formatSize(a.size) + ')');
+      var q = $('.build-qr', li);
+      q.setAttribute('aria-label', 'Show the QR code for the ' + v.label + ' build');
+      q.setAttribute('title', 'Show this build\'s QR code');
+      q.addEventListener('click', function () {
+        dl.pickLabel = v.label;
+        pickBuild.value = a.name;
+        renderPick();
+        var panel = $('.qr-panel');
+        panel.classList.remove('flash');
+        void panel.offsetWidth;
+        panel.classList.add('flash');
+        if (window.matchMedia('(max-width: 1020px)').matches) {
+          panel.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+        }
+      });
+      list.appendChild(li);
+    });
+    $('[data-builds]').hidden = !apks.length;
   }
 
   /* ---------- Download bar on phones ---------- */
@@ -340,31 +552,24 @@
     if (!configured) disableLink(all, 'Coming soon');
   }
 
-  function showRelease(release, totalDownloads) {
-    var apk = pickApk(release.assets || []);
-    card.setAttribute('data-release-state', 'ready');
-    setTag(release.prerelease ? 'Pre-release' : 'Latest', release.prerelease ? 'soon' : 'ok');
-    setRelease('version', release.tag_name || release.name || '—');
-    setRelease('date', release.published_at ? formatDate(release.published_at) : '—');
-    setRelease('downloads', formatCount(totalDownloads));
-    enableLink(notesBtn, release.html_url, true);
-    if (apk) {
-      setRelease('size', formatSize(apk.size));
-      setRelease('status', 'Download the APK below, or scan the code with your phone.');
-      enableLink(apkBtn, apk.browser_download_url, false);
-      $('span', apkBtn).textContent = 'Download APK (' + formatSize(apk.size) + ')';
-      if (apk.digest && /^sha256:/.test(apk.digest)) {
-        setRelease('sha', apk.digest.slice(7));
-        $('[data-release="sha-wrap"]', card).hidden = false;
-      }
-      drawQr(apk.browser_download_url);
-      showOtherFiles(release, apk);
-      setDock(apk.browser_download_url, (release.tag_name || '') + ' · ' + formatSize(apk.size));
-    } else {
+  function showReleases(releases, latestAny) {
+    dl.releases = releases.filter(function (r) { return apksOf(r).length; });
+    if (!dl.releases.length) {
+      // A release without an APK: point to its page.
+      card.setAttribute('data-release-state', 'ready');
+      setTag(latestAny.prerelease ? 'Pre-release' : 'Latest', latestAny.prerelease ? 'soon' : 'ok');
+      setRelease('version', latestAny.tag_name || latestAny.name || '—');
+      setRelease('date', latestAny.published_at ? formatDate(latestAny.published_at) : '—');
       setRelease('size', '—');
       setRelease('status', 'This version has no APK attached. See the release page for its files.');
-      enableLink(apkBtn, release.html_url, true);
+      enableLink(notesBtn, latestAny.html_url, true);
+      enableLink(apkBtn, latestAny.html_url, true);
+      return;
     }
+    dl.latest = dl.releases.filter(function (r) { return !r.prerelease; })[0] || dl.releases[0];
+    card.setAttribute('data-release-state', 'ready');
+    setupHero();
+    setupPickers();
   }
 
   function getJson(url) {
@@ -392,7 +597,7 @@
       setGh('downloads', formatCount(total));
       setGh('version', latest.tag_name || '—');
       setGh('note', note || 'Live from GitHub.');
-      showRelease(latest, total);
+      showReleases(releases, latest);
     } else {
       setGh('note', data.repo ? 'Downloads appear here after the first release.' : 'The repository could not be found.');
       showNoRelease(data.repo

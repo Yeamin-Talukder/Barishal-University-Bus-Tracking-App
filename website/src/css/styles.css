@@ -453,7 +453,7 @@ p { margin: 0; }
 .dl-files { margin: -8px 0 0; font-size: 14px; color: var(--muted); }
 .dl-files a { color: var(--river); font-weight: 700; text-decoration: none; }
 .dl-files a:hover { text-decoration: underline; }
-.dl-card.android { grid-row: span 2; display: flex; flex-direction: column; gap: 22px; padding: 30px; }
+.dl-card.android { display: flex; flex-direction: column; gap: 22px; padding: 30px; }
 .dl-card.android::after {
   content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
   background: linear-gradient(140deg, color-mix(in srgb, var(--brand) 70%, transparent), transparent 40%, transparent 60%, color-mix(in srgb, var(--river) 60%, transparent));
@@ -777,4 +777,129 @@ p { margin: 0; }
   .reveal { opacity: 1; transform: none; }
   .map-route { stroke-dashoffset: 0; }
   .float-card, .map-stops circle { opacity: 1; }
+}
+
+/* ---------- Download choices, builds and QR codes ---------- */
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Hero: [Download] [build ▾] [QR] as one group */
+.dl-group { display: inline-flex; align-items: stretch; gap: 8px; flex-wrap: nowrap; }
+.dl-group .dl-main b { font-weight: 800; }
+.select {
+  position: relative; display: inline-flex; align-items: center;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 14px;
+  transition: border-color .2s, background-color .2s, box-shadow .2s;
+}
+.select:hover { border-color: var(--brand); }
+.select:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.select select {
+  appearance: none; -webkit-appearance: none; border: 0; background: transparent; color: var(--text);
+  font: inherit; font-size: 14.5px; font-weight: 700; padding: 10px 40px 10px 14px; min-height: 44px;
+  cursor: pointer; outline: none; width: 100%; text-overflow: ellipsis;
+}
+.select select:disabled { cursor: default; opacity: .75; }
+.select select option { background: var(--surface); color: var(--text); }
+.select > .i { position: absolute; right: 13px; width: 18px; height: 18px; pointer-events: none; color: var(--muted); transition: transform .25s; }
+.select:focus-within > .i { color: var(--brand); transform: rotate(180deg); }
+.select-hero { border-radius: 16px; }
+.select-hero select { min-height: 56px; max-width: 168px; }
+.qr-btn { width: 56px; height: 56px; border-radius: 16px; flex: none; }
+.qr-btn .i { width: 24px; height: 24px; }
+.qr-btn:not(:disabled):hover { border-color: var(--brand); color: var(--brand); }
+.qr-btn:disabled { opacity: .45; cursor: default; transform: none; }
+.hero-dl-note { margin-top: 12px; color: var(--muted); font-size: 13.5px; font-weight: 600; }
+
+/* Download section */
+.dl-pickers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label { color: var(--faint); font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.field .select { width: 100%; }
+
+.builds { border-top: 1px solid var(--line); padding-top: 18px; }
+.builds-title { font-weight: 800; font-size: 15px; margin-bottom: 10px; }
+.builds-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.build {
+  display: flex; align-items: center; gap: 14px; padding: 14px 14px 14px 16px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px;
+  transition: border-color .25s, background-color .25s, transform .25s;
+}
+.build:hover { border-color: var(--line-2); transform: translateY(-1px); }
+.build.chosen { border-color: color-mix(in srgb, var(--brand) 55%, transparent); background: color-mix(in srgb, var(--brand) 7%, var(--surface-2)); }
+.build-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.build-name { display: flex; align-items: center; gap: 8px; font-size: 15.5px; }
+.build-name .tag { padding: 2px 8px; font-size: 11px; }
+.build-desc { color: var(--muted); font-size: 13.5px; }
+.build-meta { color: var(--faint); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.build-actions { display: flex; gap: 8px; flex: none; }
+.build-qr { width: 38px; height: 38px; }
+.build-qr .i { width: 18px; height: 18px; }
+.builds-help { margin-top: 12px; font-size: 13px; }
+
+/* The QR card (download section, and the pop-up) */
+.qr-panel { display: flex; justify-content: center; align-items: flex-start; padding: 22px; }
+.qr-panel .qr-card { position: sticky; top: 96px; }
+.qr-panel.flash { animation: qr-flash .9s ease; }
+.qr-card {
+  position: relative; width: 100%; max-width: 340px; display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 26px 22px 22px; border-radius: 26px;
+  background: radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--brand) 14%, transparent), transparent 60%), var(--surface);
+  border: 1px solid color-mix(in srgb, var(--brand) 22%, var(--line));
+}
+.qr-pill {
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px;
+  background: var(--brand-soft); color: var(--brand); font-size: 12.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+.qr-pill .i { width: 16px; height: 16px; }
+.qr-title { margin-top: 16px; font-size: 1.35rem; font-weight: 800; }
+.qr-text { margin-top: 8px; color: var(--muted); font-size: 14.5px; max-width: 26ch; }
+.qr-frame { position: relative; margin: 22px 0 18px; padding: 14px; }
+/* Corner brackets around the code */
+.qr-frame::before, .qr-frame::after {
+  content: ""; position: absolute; inset: 0; border-radius: 22px; pointer-events: none;
+  border: 3px solid var(--brand);
+  -webkit-mask: linear-gradient(#000 0 0) top left / 30px 30px no-repeat, linear-gradient(#000 0 0) top right / 30px 30px no-repeat,
+                linear-gradient(#000 0 0) bottom left / 30px 30px no-repeat, linear-gradient(#000 0 0) bottom right / 30px 30px no-repeat;
+          mask: linear-gradient(#000 0 0) top left / 30px 30px no-repeat, linear-gradient(#000 0 0) top right / 30px 30px no-repeat,
+                linear-gradient(#000 0 0) bottom left / 30px 30px no-repeat, linear-gradient(#000 0 0) bottom right / 30px 30px no-repeat;
+}
+.qr-frame::after { border-color: transparent; }
+.qr-frame canvas {
+  display: block; width: 230px; height: 230px; border-radius: 18px; background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25); opacity: 0; transform: scale(.94); transition: opacity .4s, transform .4s;
+}
+.qr-frame canvas.ready { opacity: 1; transform: none; }
+.qr-empty {
+  position: absolute; inset: 14px; display: grid; place-items: center; padding: 20px; border-radius: 18px;
+  background: var(--surface-2); color: var(--muted); font-size: 13.5px;
+}
+.qr-empty[hidden] { display: none; }
+.qr-file {
+  width: 100%; padding: 12px 16px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line);
+  font-weight: 700; font-size: 14.5px; color: var(--text);
+}
+.qr-hint { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; text-align: left; color: var(--muted); font-size: 13.5px; }
+.qr-hint .i { width: 18px; height: 18px; color: var(--brand); flex: none; margin-top: 2px; }
+
+/* Pop-up */
+.qr-dialog { padding: 0; border: 0; background: transparent; color: var(--text); max-width: calc(100vw - 32px); overflow: visible; }
+.qr-dialog::backdrop { background: rgba(5, 8, 10, .62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.qr-dialog[open] .qr-card { animation: pop-in .35s cubic-bezier(.2, .9, .3, 1.2); box-shadow: var(--shadow); }
+.qr-close { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; }
+
+@keyframes qr-flash { 0%, 100% { box-shadow: none; } 35% { box-shadow: 0 0 0 4px var(--brand-soft); } }
+
+@media (max-width: 600px) {
+  .dl-group { width: 100%; }
+  .dl-group .dl-main { flex: 1 1 auto; min-width: 0; }
+  .select-hero select { max-width: 112px; padding-right: 34px; font-size: 14px; min-height: 54px; }
+  .qr-btn { width: 54px; height: 54px; }
+  .hero-ctas { flex-wrap: wrap; }
+  /* The hero stays one screen tall: GitHub is in the menu and further down. */
+  .hero-ctas > .btn-ghost { display: none; }
+  .dl-pickers { grid-template-columns: minmax(0, 1fr); }
+  .build { flex-wrap: wrap; }
+  .build-actions { width: 100%; }
+  .build-actions .build-dl { flex: 1; }
+  .qr-frame canvas { width: 200px; height: 200px; }
 }

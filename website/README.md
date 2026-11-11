@@ -30,11 +30,18 @@ website/
   first one shows a bus being tracked; its buses are the app's test buses,
   and both the page and the screenshot say so.
 - **Roadmap:** ready, in progress, next, later.
-- **Download:** Android version, release date, size, download count, SHA-256
-  checksum, a QR code for desktop visitors, a link to the other APK in the
-  release (for older 32-bit phones), and how to install an APK, including
+- **Hero download group:** the download button for the latest version, a
+  dropdown of its builds (64-bit recommended, 32-bit for older phones), and
+  a QR button that opens a "Scan to install" card for the chosen build.
+- **Download:** version and build dropdowns covering every release on
+  GitHub, the chosen build's date, size, download count and SHA-256, a card
+  for every build of that version (each with Download and QR buttons), a
+  QR panel that follows the choice, and how to install an APK, including
   the note that early-access builds are signed with a development key. The
-  iPhone card says it is planned.
+  iPhone card says it is planned. Builds are recognised by their file name
+  (`arm64`, `armv7`/`armeabi`, `universal`, `x86_64`), so name release APKs
+  that way. QR codes carry the app icon in the middle (error correction Q)
+  and were checked to decode to the APK link.
 - **Download bar on phones:** once the visitor has scrolled past the first
   screen, a small bar with the version, size and a Download button stays at
   the bottom. It hides over the download section and the footer.
@@ -149,6 +156,10 @@ all four. Both tools start their own headless Edge, close it when they
 finish, and give up rather than wait for ever if it stops answering.
 
 ## Search engines (SEO)
+
+Google Search Console ownership is proved by
+`src/google37d6bfa5bc028c76.html`, copied unchanged from the file Google
+gave. Keep it: removing it un-verifies the site.
 
 Already in the page:
 
