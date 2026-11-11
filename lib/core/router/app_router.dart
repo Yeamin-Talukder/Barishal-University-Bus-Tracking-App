@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/admin/presentation/admin_announcements_screen.dart';
+import '../../features/app_update/presentation/app_update_section.dart';
 import '../../features/admin/presentation/admin_buses_screen.dart';
 import '../../features/admin/presentation/admin_people_screen.dart';
 import '../../features/admin/presentation/admin_schedule_screen.dart';
@@ -9,6 +10,7 @@ import '../../features/admin/presentation/bus_editor_screen.dart';
 import '../../features/admin/presentation/admin_stops_screen.dart';
 import '../../features/admin/presentation/stop_editor_screen.dart';
 import '../../features/admin/presentation/timetable_editor_screen.dart';
+import '../../features/about/presentation/about_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/routes/presentation/routes_screen.dart';
@@ -29,6 +31,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.testDrive,
         builder: (context, state) => const TestDriveScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.about,
+        builder: (context, state) => const AboutScreen(),
       ),
       GoRoute(
         path: AppRoutes.adminStops,
@@ -72,7 +78,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
-            AppShell(navigationShell: navigationShell),
+            UpdateLauncher(child: AppShell(navigationShell: navigationShell)),
         branches: [
           StatefulShellBranch(
             routes: [

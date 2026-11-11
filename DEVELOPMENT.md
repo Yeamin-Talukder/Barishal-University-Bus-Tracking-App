@@ -1142,6 +1142,52 @@ and a red route running under the pin's tip.
   not bundled into the app.
 - The web build still has Flutter's default icons (not requested).
 
+## In-app updates and About page (11 November 2026)
+
+Asked for by the owner: update the app without leaving it.
+
+- **Where releases come from:** the website's `release.json` first (no
+  rate limit; now also carries each release's notes), then GitHub's API.
+  Only APKs under `https://github.com/Yeamin-Talukder/Barishal-University-Bus-Tracking-App/releases/download/`
+  are ever downloaded (`features/app_update/domain/app_release.dart`).
+- **Which file:** the newest release newer than the installed version (pre-
+  releases left out), and its build for the phone's ABI: `arm64` for
+  arm64-v8a, `armv7` for armeabi-v7a, else a `universal` APK. Builds are
+  recognised by file name, as on the website.
+- **Flow (sheet `presentation/update_sheet.dart`):** offer with "What's new",
+  1.0.0 → 1.1.0 and the size → download with a progress ring, bar, speed and
+  time left (cancellable) → SHA-256 checked against GitHub's published
+  digest → handed to Android's PackageInstaller from inside the app
+  (`MainActivity.kt`). Android then shows its own "Update this app?" screen;
+  every app installed outside a store must show it, so it cannot be
+  skipped. The result comes back: cancelled (file kept, "Install now"),
+  signed with a different key (explains to uninstall once), no space,
+  blocked, failed (try again).
+- **"Install unknown apps":** Android asks once per app. The sheet explains
+  the three steps, opens the switch, and continues the install when the
+  person comes back.
+- **When:** checked once, four seconds after each start; offered in the
+  sheet unless "Later" was chosen for that version. Profile → App updates
+  shows the version and state, and checks or continues on tap. Android only;
+  hidden on iOS and in the web preview.
+- **New permission:** `REQUEST_INSTALL_PACKAGES`. No new packages; the
+  installer, app version and opening links are a method channel in
+  `MainActivity.kt`.
+- **For a release to be offered as an update:** raise `version:` in
+  `pubspec.yaml` (name and build number, e.g. `1.1.0+2`; Android refuses a
+  lower version code), build with **the same signing key** as the installed
+  app, tag it `vX.Y.Z`, and name the APKs with `arm64` / `armv7`.
+- **About page** (Profile → About): the developer (Yeamin Talukder,
+  @Yeamin-Talukder) with GitHub profile and source code buttons, the
+  website, "report a problem", credits, the MIT licence and the libraries'
+  licences. Links open in the browser through the method channel.
+- **Checked:** 15 new tests (versions, choosing the build, untrusted files
+  refused, download → install, permission, checksum mismatch, cancel,
+  install cancelled, key conflict, "Later", the sheet); 545 tests pass;
+  `flutter analyze` clean; release APK builds (36.3 MB arm64) and carries
+  the permission. **Not run on a phone yet:** it can only be tried for real
+  once a release newer than the installed one exists.
+
 ## Marketing website (11 November 2026)
 
 A static download and marketing site in `website/`, separate from the app.

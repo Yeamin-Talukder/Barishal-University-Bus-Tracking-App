@@ -5,6 +5,7 @@ abstract final class AppRoutes {
   static const String stops = '/stops';
   static const String profile = '/profile';
   static const String testDrive = '/test-drive';
+  static const String about = '/about';
   static const String adminStops = '/admin/stops';
   static const String adminStopEditor = '/admin/stops/edit';
   static const String adminAnnouncements = '/admin/announcements';

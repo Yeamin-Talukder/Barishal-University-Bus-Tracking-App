@@ -73,6 +73,7 @@ def save_release_copy(owner, repo, now):
                 "prerelease": bool(r.get("prerelease")),
                 "draft": False,
                 "published_at": r.get("published_at"),
+                "body": r.get("body") or "",
                 "html_url": r.get("html_url"),
                 "assets": [
                     {

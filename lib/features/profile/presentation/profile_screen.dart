@@ -20,6 +20,7 @@ import '../../auth/application/session.dart';
 import '../../auth/presentation/account_section.dart';
 import '../../driver/presentation/driver_section.dart';
 import '../../map/application/university_map_configuration_provider.dart';
+import '../../app_update/presentation/app_update_section.dart';
 import '../../map/presentation/offline_map_section.dart';
 import '../../prediction/presentation/predicted_buses_section.dart';
 import 'widgets/theme_mode_selector.dart';
@@ -152,6 +153,20 @@ class ProfileScreen extends ConsumerWidget {
             SectionCard(
               title: 'Service',
               children: [_BackendStatusTile(status: firebaseStatus)],
+            ),
+            gap,
+            const AppUpdateSection(),
+            gap,
+            SectionCard(
+              title: 'About',
+              children: [
+                SettingsTile(
+                  icon: Icons.info_rounded,
+                  title: 'About BU Bus Tracker',
+                  subtitle: 'The developer, the source code and the credits.',
+                  onTap: () => context.push(AppRoutes.about),
+                ),
+              ],
             ),
             gap,
             // What the app is and whose map it draws.
