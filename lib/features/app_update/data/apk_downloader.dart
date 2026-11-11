@@ -57,16 +57,19 @@ abstract class ApkDownloader {
 }
 
 class HttpApkDownloader implements ApkDownloader {
-  HttpApkDownloader({Future<Directory> Function()? directory, HttpClient Function()? client})
-      : _directory = directory ?? _defaultDirectory,
-        _client = client ?? HttpClient.new;
+  HttpApkDownloader({
+    Future<Directory> Function()? directory,
+    HttpClient Function()? client,
+  }) : _directory = directory ?? _defaultDirectory,
+       _client = client ?? HttpClient.new;
 
   final Future<Directory> Function() _directory;
   final HttpClient Function() _client;
 
   static Future<Directory> _defaultDirectory() async {
     final base = await getTemporaryDirectory();
-    return Directory('${base.path}${Platform.pathSeparator}updates').create(recursive: true);
+    return Directory('${base.path}${Platform.pathSeparator}updates')
+        .create(recursive: true);
   }
 
   @override
@@ -77,16 +80,22 @@ class HttpApkDownloader implements ApkDownloader {
     required CancelToken cancel,
   }) async {
     if (!apk.isTrusted) {
-      throw const DownloadFailed('This file is not from the app\'s own releases.');
+      throw const DownloadFailed(
+        'This file is not from the app\'s own releases.',
+      );
     }
     final dir = await _directory();
     final target = File('${dir.path}${Platform.pathSeparator}${apk.name}');
 
     // Already downloaded and intact: no need to fetch it again.
-    if (await target.exists() && await target.length() == apk.size && apk.size > 0) {
+    if (await target.exists() &&
+        await target.length() == apk.size &&
+        apk.size > 0) {
       onProgress(apk.size, apk.size);
       onVerifying();
-      if (apk.sha256 == null || await _hashOf(target) == apk.sha256) return target;
+      if (apk.sha256 == null || await _hashOf(target) == apk.sha256) {
+        return target;
+      }
       await target.delete();
     }
 
@@ -102,7 +111,9 @@ class HttpApkDownloader implements ApkDownloader {
         await response.drain<void>();
         throw DownloadFailed('The server answered ${response.statusCode}.');
       }
-      final total = response.contentLength > 0 ? response.contentLength : apk.size;
+      final total = response.contentLength > 0
+          ? response.contentLength
+          : apk.size;
       sink = part.openWrite();
       final digestSink = _DigestSink();
       final hasher = sha256.startChunkedConversion(digestSink);
@@ -122,7 +133,9 @@ class HttpApkDownloader implements ApkDownloader {
 
       onVerifying();
       if (apk.size > 0 && received != apk.size) {
-        throw const DownloadFailed('The download ended early. Please try again.');
+        throw const DownloadFailed(
+          'The download ended early. Please try again.',
+        );
       }
       if (apk.sha256 != null && digestSink.value.toString() != apk.sha256) {
         throw const ChecksumMismatch();
@@ -168,7 +181,9 @@ class HttpApkDownloader implements ApkDownloader {
     if (error is FileSystemException) {
       return 'There is not enough free space on this phone for the update.';
     }
-    if (error is TimeoutException) return 'The download stopped responding. Please try again.';
+    if (error is TimeoutException) {
+      return 'The download stopped responding. Please try again.';
+    }
     return 'The download did not finish. Please try again.';
   }
 }

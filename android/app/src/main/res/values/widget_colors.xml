@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widget colours, light. The app's Teal Mint palette. -->
+<resources>
+    <color name="widget_bg">#FFFFFF</color>
+    <color name="widget_surface">#F2F5F7</color>
+    <color name="widget_text">#16202A</color>
+    <color name="widget_muted">#5A6673</color>
+    <color name="widget_accent">#0A7563</color>
+    <color name="widget_accent_soft">#1F0A7563</color>
+    <color name="widget_live">#12893F</color>
+    <color name="widget_live_soft">#1F12893F</color>
+    <color name="widget_chip">#EAEFF3</color>
+    <color name="widget_divider">#DCE3E9</color>
+</resources>

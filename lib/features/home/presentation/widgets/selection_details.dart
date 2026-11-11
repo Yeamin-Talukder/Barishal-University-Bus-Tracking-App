@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/services/eta_service.dart';
 import '../../../../core/utils/coordinate_parser.dart';
 import '../../../../core/utils/formatting.dart';
 import '../../../../data/models/bus.dart';
@@ -16,6 +15,9 @@ import '../../../../shared/widgets/status_pill.dart';
 import '../../../../shared/widgets/stop_badge.dart';
 import '../../../buses/presentation/arrival_text.dart';
 import '../../../buses/presentation/bus_card.dart';
+import '../../application/stop_arrivals.dart';
+
+export '../../application/stop_arrivals.dart' show ApproachingBus;
 
 /// The selected route, shown in the home sheet: its ends, whether it is
 /// running, and its stops in travel order.
@@ -25,15 +27,24 @@ class RouteDetails extends StatelessWidget {
     required this.stops,
     required this.onStopSelected,
     required this.onClose,
+    this.reversed = false,
+    this.onSwapDirection,
     super.key,
   });
 
   final BusRoute route;
 
-  /// The route's stops, in travel order.
+  /// The route's stops, in travel order from its start to its end.
   final List<BusStop> stops;
   final ValueChanged<BusStop> onStopSelected;
   final VoidCallback onClose;
+
+  /// Whether the route is being shown from its end back to its start. The
+  /// stops are listed, and the arrows on the map point, that way.
+  final bool reversed;
+
+  /// Shows the route the other way round. Without it there is no switch.
+  final VoidCallback? onSwapDirection;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +54,9 @@ class RouteDetails extends StatelessWidget {
       route.startName,
       route.endName,
     ].where((name) => name.isNotEmpty).join(' to ');
+    final ordered = reversed ? stops.reversed.toList() : stops;
+    final from = reversed ? route.endName : route.startName;
+    final to = reversed ? route.startName : route.endName;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,6 +103,59 @@ class RouteDetails extends StatelessWidget {
             ],
           ),
         ),
+        if (onSwapDirection != null && from.isNotEmpty && to.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              0,
+            ),
+            child: SoftCard(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.xs,
+                AppSpacing.xs,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Direction shown',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          '$from → $to',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton.filledTonal(
+                    tooltip: 'Show the other direction',
+                    onPressed: onSwapDirection,
+                    icon: const Icon(Icons.swap_horiz_rounded),
+                  ),
+                ],
+              ),
+            ),
+          ),
         SectionTitle(stops.isEmpty ? 'Stops' : 'Stops (${stops.length})'),
         if (stops.isEmpty)
           Padding(
@@ -101,12 +168,12 @@ class RouteDetails extends StatelessWidget {
             ),
           )
         else
-          for (final (index, stop) in stops.indexed)
+          for (final (index, stop) in ordered.indexed)
             _StopStep(
               stop: stop,
               color: routeColor(route.colorHex),
               isFirst: index == 0,
-              isLast: index == stops.length - 1,
+              isLast: index == ordered.length - 1,
               onTap: () => onStopSelected(stop),
             ),
       ],
@@ -192,23 +259,6 @@ class _StopStep extends StatelessWidget {
   }
 }
 
-/// A bus heading for a stop, with the estimate of when it gets there.
-class ApproachingBus {
-  const ApproachingBus({
-    required this.bus,
-    required this.routeName,
-    required this.estimate,
-    this.journey,
-  });
-
-  final TrackedBus bus;
-  final String routeName;
-  final ArrivalEstimated estimate;
-
-  /// Which way the bus is going, as "From → To", when it can be told.
-  final String? journey;
-}
-
 /// How far a bus still has to drive, for example "450 m away" or
 /// "2.3 km away".
 String distanceAwayText(double meters) {
@@ -226,11 +276,15 @@ class _ArrivalCard extends StatelessWidget {
     required this.arrival,
     required this.isNext,
     required this.onTap,
+    this.action,
   });
 
   final ApproachingBus arrival;
   final bool isNext;
   final VoidCallback? onTap;
+
+  /// Something to do about this bus, such as setting an alert.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -330,6 +384,7 @@ class _ArrivalCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                ?action,
                 if (onTap != null)
                   Icon(
                     Icons.chevron_right_rounded,
@@ -394,8 +449,13 @@ class StopDetails extends StatelessWidget {
     this.hasTrackedBuses = false,
     this.onBusSelected,
     this.predictedArrivals,
+    this.arrivalActionBuilder,
     super.key,
   });
+
+  /// Builds something to do about a bus on its way here, such as a bell
+  /// for setting an alert.
+  final Widget Function(ApproachingBus arrival)? arrivalActionBuilder;
 
   final BusStop stop;
 
@@ -541,6 +601,7 @@ class StopDetails extends StatelessWidget {
                     arrival: arrival,
                     // The soonest bus stands out.
                     isNext: index == 0,
+                    action: arrivalActionBuilder?.call(arrival),
                     onTap: onBusSelected == null
                         ? null
                         : () => onBusSelected!(arrival.bus),

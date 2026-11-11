@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_shapes.dart';
+import '../../../core/utils/layout.dart';
+import '../../alerts/presentation/arrival_alert_views.dart';
 
-/// The passenger app's frame: the current tab above a bottom navigation bar.
+/// The passenger app's frame: the current tab above a bottom navigation
+/// bar, or beside a navigation rail on a wide screen (a tablet, or a phone
+/// on its side, where a bar along the bottom would take too much of the
+/// little height there is).
 class AppShell extends StatelessWidget {
   const AppShell({required this.navigationShell, super.key});
 
@@ -28,8 +33,51 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = navigationShell.currentIndex;
 
+    if (isWideLayout(MediaQuery.sizeOf(context))) {
+      final short = MediaQuery.sizeOf(context).height < 500;
+      return Scaffold(
+        body: ArrivalAlertListener(
+          child: Row(
+            children: [
+              SafeArea(
+                right: false,
+                child: NavigationRail(
+                  selectedIndex: current,
+                  onDestinationSelected: _onDestinationSelected,
+                  // Labels do not fit four tabs on a phone turned sideways.
+                  labelType: short
+                      ? NavigationRailLabelType.none
+                      : NavigationRailLabelType.all,
+                  groupAlignment: short ? 0 : -0.85,
+                  destinations: [
+                    for (final (index, tab) in _tabs.indexed)
+                      NavigationRailDestination(
+                        icon: Tooltip(
+                          message: tab.label,
+                          child: _TabIcon(
+                            tab: tab,
+                            isSelected: index == current,
+                          ),
+                        ),
+                        label: Text(tab.label),
+                      ),
+                  ],
+                ),
+              ),
+              VerticalDivider(
+                width: 1,
+                thickness: 1,
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+              Expanded(child: navigationShell),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      body: navigationShell,
+      body: ArrivalAlertListener(child: navigationShell),
       bottomNavigationBar: DecoratedBox(
         // A hairline, not a shadow, separates the bar from the page.
         decoration: BoxDecoration(

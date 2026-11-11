@@ -184,6 +184,14 @@ POI_PROMINENT = [
 POI_ALL = [kind for kinds in POI_GROUPS.values() for kind in kinds]
 
 
+# The map is a backdrop for the bus routes: shops, small places and side
+# streets are kept, but drawn quieter, so the route lines and buses stand
+# out. (The map package itself only covers a band around the routes.)
+QUIET_PLACES = 0.6
+QUIET_LABELS = 0.7
+QUIET_ROADS = 0.75
+
+
 def kind_in(values: list[str], key: str = "kind") -> list:
     return ["in", ["get", key], ["literal", values]]
 
@@ -435,7 +443,11 @@ def layers(p: dict) -> list[dict]:
             "road-service",
             "roads",
             road_filter(SERVICE),
-            {"line-color": p["minor"], "line-width": zoom_width(*SERVICE_WIDTH)},
+            {
+                "line-color": p["minor"],
+                "line-width": zoom_width(*SERVICE_WIDTH),
+                "line-opacity": QUIET_ROADS,
+            },
             minzoom=14,
         ),
         line(
@@ -454,6 +466,7 @@ def layers(p: dict) -> list[dict]:
                     p["minor"],
                 ],
                 "line-width": zoom_width(*MINOR_WIDTH),
+                "line-opacity": QUIET_ROADS,
             },
             minzoom=12,
         ),
@@ -538,6 +551,7 @@ def layers(p: dict) -> list[dict]:
             color=p["label_road"],
             halo=p["halo"],
             layout={"symbol-placement": "line", "symbol-spacing": 280},
+            paint={"text-opacity": QUIET_LABELS},
             minzoom=15,
         ),
         label(
@@ -563,6 +577,8 @@ def layers(p: dict) -> list[dict]:
                 "circle-color": poi_color(p),
                 "circle-stroke-color": p["halo"],
                 "circle-stroke-width": 1,
+                "circle-opacity": QUIET_PLACES,
+                "circle-stroke-opacity": QUIET_PLACES,
             },
         },
         label(
@@ -578,6 +594,7 @@ def layers(p: dict) -> list[dict]:
                 "text-offset": [0, 0.5],
                 "symbol-sort-key": ["get", "min_zoom"],
             },
+            paint={"text-opacity": QUIET_PLACES},
             minzoom=15.5,
         ),
         label(
@@ -589,6 +606,7 @@ def layers(p: dict) -> list[dict]:
             color=poi_color(p),
             halo=p["halo"],
             layout={"symbol-sort-key": ["get", "min_zoom"]},
+            paint={"text-opacity": 0.8},
             minzoom=13,
             maxzoom=15.5,
         ),

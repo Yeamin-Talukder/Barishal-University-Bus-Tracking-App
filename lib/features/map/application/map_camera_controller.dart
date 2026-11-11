@@ -43,6 +43,24 @@ class MapCameraController {
   double coveredTop = 0;
   double coveredBottom = 0;
 
+  /// How much a side panel covers at the left, on a wide screen.
+  double coveredLeft = 0;
+
+  /// Height of the map on screen, in logical pixels. Needed to keep a
+  /// followed bus a little below the middle.
+  double viewHeight = 0;
+
+  /// While following with the map turned to the bus's heading, the bus is
+  /// drawn this far below the middle of the uncovered part of the map (as
+  /// a part of its height), so more of the road ahead is in view.
+  static const double followLookAhead = 0.16;
+
+  double _lookAheadPixels(bool headingUp) {
+    if (!headingUp) return 0;
+    final uncovered = viewHeight - coveredTop - coveredBottom;
+    return uncovered <= 0 ? 0 : uncovered * followLookAhead;
+  }
+
   final UniversityMapConfiguration _configuration;
   MapLibreMapController? _map;
 
@@ -89,24 +107,43 @@ class MapCameraController {
   double get bearing => _map?.cameraPosition?.bearing ?? 0;
 
   /// Turns to face a followed bus and leans the camera forward. Called
-  /// once when following starts; [trackBus] then keeps up with the bus.
-  Future<void> enterFollow(GeoPoint position, {double? headingDegrees}) async {
-    final facing = headingDegrees ?? bearing;
+  /// once when following starts, and again to re-centre; [trackBus] then
+  /// keeps up with the bus.
+  ///
+  /// With [headingUp] the map faces [headingDegrees] (or stays as it is
+  /// turned when the heading is not known) and leans forward; without it
+  /// the map is north-up and level. [keepZoom] keeps the passenger's own
+  /// zoom, for re-centring.
+  Future<void> enterFollow(
+    GeoPoint position, {
+    double? headingDegrees,
+    bool headingUp = true,
+    bool keepZoom = false,
+  }) async {
+    final facing = headingUp ? (headingDegrees ?? bearing) : 0.0;
+    final zoom = keepZoom
+        ? (_map?.cameraPosition?.zoom ?? followZoom).clamp(
+            _followZoomFurthest,
+            _followZoomNearest,
+          )
+        : followZoom;
     await _map?.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
           target: _latLng(
             centreFor(
               position,
-              zoom: followZoom,
+              zoom: zoom,
               bearingDegrees: facing,
               coveredTop: coveredTop,
               coveredBottom: coveredBottom,
+              coveredLeft: coveredLeft,
+              lookAheadPixels: _lookAheadPixels(headingUp),
             ),
           ),
-          zoom: followZoom,
+          zoom: zoom,
           bearing: facing,
-          tilt: followTilt,
+          tilt: headingUp ? followTilt : 0,
         ),
       ),
       duration: _moveDuration,
@@ -117,7 +154,11 @@ class MapCameraController {
   /// Called many times a second while the bus moves, so the camera travels
   /// with the marker instead of catching up in steps. The passenger's own
   /// zoom is kept.
-  Future<void> trackBus(GeoPoint position, double bearingDegrees) async {
+  Future<void> trackBus(
+    GeoPoint position,
+    double bearingDegrees, {
+    bool headingUp = true,
+  }) async {
     final map = _map;
     if (map == null) return;
     final zoom = (map.cameraPosition?.zoom ?? followZoom).clamp(
@@ -134,11 +175,13 @@ class MapCameraController {
               bearingDegrees: bearingDegrees,
               coveredTop: coveredTop,
               coveredBottom: coveredBottom,
+              coveredLeft: coveredLeft,
+              lookAheadPixels: _lookAheadPixels(headingUp),
             ),
           ),
           zoom: zoom,
           bearing: bearingDegrees,
-          tilt: followTilt,
+          tilt: headingUp ? followTilt : 0,
         ),
       ),
     );
@@ -166,6 +209,7 @@ class MapCameraController {
     bearingDegrees: 0,
     coveredTop: coveredTop,
     coveredBottom: coveredBottom,
+    coveredLeft: coveredLeft,
   );
 
   /// The camera target that puts [point] in the middle of the uncovered
@@ -173,7 +217,10 @@ class MapCameraController {
   ///
   /// With more covered at the bottom than the top, the camera has to look
   /// further "down the screen" than the point; which way that is on the
-  /// ground depends on how the map is turned.
+  /// ground depends on how the map is turned. A panel at the left
+  /// ([coveredLeft]) moves the point to the right in the same way.
+  /// [lookAheadPixels] puts the point that far below the middle instead of
+  /// on it, so more of what lies ahead is seen.
   @visibleForTesting
   static GeoPoint centreFor(
     GeoPoint point, {
@@ -181,20 +228,28 @@ class MapCameraController {
     required double bearingDegrees,
     required double coveredTop,
     required double coveredBottom,
+    double coveredLeft = 0,
+    double lookAheadPixels = 0,
   }) {
     // MapLibre zoom levels are for 512-pixel tiles.
     final metersPerPixel =
         earthCircumferenceMeters *
         cos(degreesToRadians(point.latitude)) /
         (512 * pow(2, zoom));
-    final shiftMeters = (coveredBottom - coveredTop) / 2 * metersPerPixel;
-    // Down the screen is the opposite of the way the camera faces.
+    // How far the camera looks down the screen from the point, and how
+    // far to the left of it.
+    final downMeters =
+        ((coveredBottom - coveredTop) / 2 - lookAheadPixels) * metersPerPixel;
+    final leftMeters = coveredLeft / 2 * metersPerPixel;
+    // Up the screen is the way the camera faces; right is a quarter turn
+    // clockwise from that.
     final facing = degreesToRadians(bearingDegrees);
+    final north = -downMeters * cos(facing) + leftMeters * sin(facing);
+    final east = -downMeters * sin(facing) - leftMeters * cos(facing);
     return GeoPoint(
-      point.latitude - shiftMeters * cos(facing) / metersPerDegreeLatitude,
-      point.longitude -
-          shiftMeters *
-              sin(facing) /
+      point.latitude + north / metersPerDegreeLatitude,
+      point.longitude +
+          east /
               (metersPerDegreeLatitude * cos(degreesToRadians(point.latitude))),
     );
   }
@@ -219,7 +274,7 @@ class MapCameraController {
           southwest: LatLng(latitudes.reduce(min), longitudes.reduce(min)),
           northeast: LatLng(latitudes.reduce(max), longitudes.reduce(max)),
         ),
-        left: _sidePadding,
+        left: coveredLeft + _sidePadding,
         top: coveredTop + _sidePadding,
         right: _sidePadding,
         bottom: coveredBottom + _sidePadding,
@@ -238,7 +293,7 @@ class MapCameraController {
           southwest: LatLng(latitudes.reduce(min), longitudes.reduce(min)),
           northeast: LatLng(latitudes.reduce(max), longitudes.reduce(max)),
         ),
-        left: _sidePadding,
+        left: coveredLeft + _sidePadding,
         top: coveredTop + _sidePadding,
         right: _sidePadding,
         bottom: coveredBottom + _sidePadding,

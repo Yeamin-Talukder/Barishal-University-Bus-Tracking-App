@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import '../../../core/constants/university_map_configuration.dart';
+import '../../../core/services/eta_service.dart';
 import '../../../core/utils/geo_math.dart';
 import '../../../core/utils/route_geometry.dart';
 import '../../../core/theme/app_colors.dart';
@@ -17,8 +18,12 @@ import '../../../data/models/transport_network.dart';
 import '../../../data/repositories/bus_location_repository.dart';
 import '../../../data/repositories/transport_network_repository.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../home/application/nearest_stop.dart';
+import '../application/bus_grouping.dart';
 import '../application/bus_map_layer.dart';
 import '../application/bus_motion.dart';
+import '../application/map_view_state.dart';
+import '../application/route_flow_layer.dart';
 import '../../prediction/application/prediction_providers.dart';
 import '../application/predicted_bus_layer.dart';
 import '../application/stop_map_layer.dart';
@@ -28,6 +33,7 @@ import '../application/map_selection.dart';
 import '../application/offline_map_service.dart';
 import '../application/transport_map_layers.dart';
 import '../application/university_map_configuration_provider.dart';
+import 'bus_group_sheet.dart';
 import 'offline_map_placeholder.dart';
 
 /// Builds the map shown on the home tab. Widget tests override this to avoid
@@ -79,6 +85,17 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
   /// Where buses probably are, when there is no live position for them.
   final PredictedBusLayer _predictedLayer = PredictedBusLayer();
   bool _predictedAttached = false;
+
+  /// Which way the picked route runs, and how far a picked bus has come.
+  final RouteFlowLayer _flowLayer = RouteFlowLayer();
+  bool _flowAttached = false;
+  bool _drawingFlow = false;
+  DateTime _flowDrawnAt = DateTime.fromMillisecondsSinceEpoch(0);
+  static const Duration _flowGap = Duration(milliseconds: 700);
+
+  /// The groups of overlapping buses as last drawn, to skip redrawing
+  /// them when nothing changed.
+  String _groupsDrawn = '';
 
   /// The picked stop's animated badge.
   final StopFocusLayer _stopFocus = StopFocusLayer();
@@ -148,6 +165,8 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     _busLayerAttached = false;
     _stopFocusAttached = false;
     _predictedAttached = false;
+    _flowAttached = false;
+    _groupsDrawn = '';
   }
 
   /// Runs after the first style and after every `setStyle`.
@@ -171,17 +190,46 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
         ink: scheme.surface,
       );
       if (!mounted) return;
+      // The ring round the nearest stop comes back with the layers.
+      await _transportLayers.showNearestStop(
+        null,
+        ref.read(nearestStopProvider)?.stop.id,
+        attached: false,
+      );
       await _transportLayers.attach(
         map,
         network,
         ref.read(mapSelectionProvider),
         layerColors,
         stopIcon: stopIcon,
+        busRouteId: _pickedBusRouteId(),
       );
       _layersAttached = true;
     } catch (error) {
       // The base map still works without the transport layers.
       debugPrint('Could not add route and stop layers: $error');
+    }
+
+    _flowAttached = false;
+    try {
+      if (!mounted) return;
+      final arrow = await paintRouteArrow(
+        ink: AppColors.darkBackground,
+        rim: const Color(0xCCFFFFFF),
+      );
+      if (!mounted) return;
+      await _flowLayer.attach(
+        map,
+        arrow: arrow,
+        casingColor: layerColors.routeCasing,
+        labelColor: layerColors.label,
+        labelHaloColor: layerColors.labelHalo,
+        timeColor: layerColors.label,
+      );
+      _flowAttached = true;
+      unawaited(_drawFlow(force: true));
+    } catch (error) {
+      debugPrint('Could not add the route arrows: $error');
     }
 
     try {
@@ -247,6 +295,7 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
         pointers: pointers,
       );
       _busLayerAttached = true;
+      _groupsDrawn = '';
       _onBusesChanged();
     } catch (error) {
       debugPrint('Could not add the bus markers: $error');
@@ -279,22 +328,78 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     final wallClock = DateTime.now();
     final buses = ref.read(trackedBusesProvider).value ?? const <TrackedBus>[];
     final zoom = map.cameraPosition?.zoom;
+    final network = ref.read(transportNetworkProvider).value;
+    final selectedBusId = ref.read(mapSelectionProvider).busId;
+    BusTrackingStatus statusOf(TrackedBus bus) =>
+        config.statusOf(bus.location?.updatedAt, now);
+    // Where each marker goes, worked out once: the groups need it too.
+    final positions = {
+      for (final bus in buses)
+        if (bus.location != null)
+          bus.bus.id: _drawnPosition(bus, wallClock, zoom),
+    };
+    // Buses that would lie on top of each other become one marker with a
+    // count. The picked bus always keeps its own.
+    final groups = zoom == null
+        ? const <BusGroup>[]
+        : groupOverlappingBuses(
+            [
+              for (final MapEntry(key: id, value: position)
+                  in positions.entries)
+                (id: id, position: position),
+            ],
+            zoom: zoom,
+            keepApartId: selectedBusId,
+          );
+    final grouped = {for (final group in groups) ...group.busIds};
+    final colors = _busColors();
     try {
       await _busLayer.update(
         map,
         BusMapLayer.geoJson(
           buses,
-          statusOf: (bus) => config.statusOf(bus.location?.updatedAt, now),
+          statusOf: statusOf,
           headingOf: (bus) =>
               _busMotion.poseOf(bus.bus.id, wallClock)?.headingDegrees,
-          positionOf: (bus) => _drawnPosition(bus, wallClock, zoom),
-          colors: _busColors(),
-          selectedBusId: ref.read(mapSelectionProvider).busId,
+          positionOf: (bus) => positions[bus.bus.id]!,
+          routeColorOf: (bus) => bus.bus.routeId == null
+              ? null
+              : network?.routeById(bus.bus.routeId!)?.colorHex,
+          ageOf: (bus) => bus.location == null
+              ? null
+              : now.difference(bus.location!.updatedAt),
+          hiddenIds: grouped,
+          colors: colors,
+          selectedBusId: selectedBusId,
           pulse:
               (wallClock.millisecondsSinceEpoch % _pulsePeriodMs) /
               _pulsePeriodMs,
         ),
       );
+      // A group is coloured by the freshest of its buses.
+      final groupMarkers = [
+        for (final group in groups)
+          (
+            group: group,
+            status: buses
+                .where((bus) => group.busIds.contains(bus.bus.id))
+                .map(statusOf)
+                .reduce((a, b) => a.index <= b.index ? a : b),
+          ),
+      ];
+      final signature = [
+        for (final (:group, :status) in groupMarkers)
+          '${group.busIds.join('|')}:${status.name}:'
+              '${group.position.latitude.toStringAsFixed(5)},'
+              '${group.position.longitude.toStringAsFixed(5)}',
+      ].join(';');
+      if (signature != _groupsDrawn) {
+        _groupsDrawn = signature;
+        await _busLayer.updateGroups(
+          map,
+          BusMapLayer.groupsGeoJson(groupMarkers, colors: colors),
+        );
+      }
     } catch (error) {
       debugPrint('Could not update the bus markers: $error');
     } finally {
@@ -361,7 +466,7 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     final buses = ref.read(predictedBusesProvider);
     final network = ref.read(transportNetworkProvider).value;
     final zoom = map.cameraPosition?.zoom;
-    final selectedRoute = ref.read(mapSelectionProvider).routeId;
+    final selectedRoute = _focusRouteId();
     try {
       await _predictedLayer.update(
         map,
@@ -384,6 +489,142 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
       );
     } catch (error) {
       debugPrint('Could not update the predicted buses: $error');
+    }
+  }
+
+  /// The route of the bus the passenger picked, if it has a line. While a
+  /// bus is picked its route is brought forward like a picked route.
+  String? _pickedBusRouteId() {
+    final busId = ref.read(mapSelectionProvider).busId;
+    if (busId == null) return null;
+    final buses = ref.read(trackedBusesProvider).value ?? const <TrackedBus>[];
+    final tracked = buses.where((bus) => bus.bus.id == busId).firstOrNull;
+    if (tracked == null || tracked.location == null) return null;
+    return _trackOf(tracked) == null ? null : tracked.bus.routeId;
+  }
+
+  /// The route drawn on the middle of the road: the picked one, or the
+  /// picked bus's.
+  String? _focusRouteId() =>
+      ref.read(mapSelectionProvider).routeId ?? _pickedBusRouteId();
+
+  /// What to draw about travel along the route in focus, and the minutes
+  /// to show at the stops ahead of a picked bus.
+  (RouteFlow?, List<StopTime>) _currentFlow() {
+    final network = ref.read(transportNetworkProvider).value;
+    final selection = ref.read(mapSelectionProvider);
+    if (network == null) return (null, const []);
+
+    final route = selection.routeId == null
+        ? null
+        : network.routeById(selection.routeId!);
+    if (route != null) {
+      final line = TransportGeoJson.withoutStubs(route.path);
+      if (line.length < 2) return (null, const []);
+      // Arrows along the line the route layers draw, the way it is shown.
+      return (
+        RouteFlow(
+          color: route.colorHex,
+          name: route.name,
+          ahead: ref.read(routeShownReversedProvider)
+              ? line.reversed.toList()
+              : line,
+        ),
+        const [],
+      );
+    }
+
+    final busId = selection.busId;
+    final buses = ref.read(trackedBusesProvider).value ?? const <TrackedBus>[];
+    final tracked = buses.where((bus) => bus.bus.id == busId).firstOrNull;
+    final busRoute = tracked?.bus.routeId == null
+        ? null
+        : network.routeById(tracked!.bus.routeId!);
+    final track = tracked == null ? null : _trackOf(tracked);
+    final location = tracked?.location;
+    if (tracked == null ||
+        busRoute == null ||
+        track == null ||
+        location == null) {
+      return (null, const []);
+    }
+
+    final stops = network.stopsOf(busRoute);
+    final eta = ref.read(etaServiceProvider);
+    final now = ref.read(clockProvider)();
+    final isLive =
+        ref
+            .read(trackingConfigurationProvider)
+            .statusOf(location.updatedAt, now) ==
+        BusTrackingStatus.live;
+    final direction = !isLive
+        ? null
+        : eta
+              .progress(route: busRoute, stops: stops, location: location)
+              .direction;
+    if (direction == null) {
+      // Which way it is going is not known: the whole line, no arrows and
+      // nothing marked as covered.
+      return (
+        RouteFlow(
+          color: busRoute.colorHex,
+          name: busRoute.name,
+          ahead: track.path,
+          drawLines: true,
+          arrows: false,
+        ),
+        const [],
+      );
+    }
+
+    final drawn =
+        _busMotion.poseOf(tracked.bus.id, DateTime.now())?.position ??
+        location.position;
+    final times = <StopTime>[
+      for (final stop in stops)
+        if (eta.estimateArrival(
+              route: busRoute,
+              stops: stops,
+              stop: stop,
+              location: location,
+              now: now,
+            )
+            case ArrivalEstimated(:final travelTime))
+          (
+            position: stop.position,
+            text: RouteFlowGeoJson.timeText(travelTime),
+          ),
+    ];
+    return (
+      RouteFlow.forBus(
+        track: track,
+        alongMeters: track.project(drawn).distanceAlongMeters,
+        forwards: direction == TravelDirection.forward,
+        color: busRoute.colorHex,
+        name: busRoute.name,
+      ),
+      times,
+    );
+  }
+
+  /// Redraws the arrows, the covered part of a picked bus's route and the
+  /// minutes at its stops. Not more than about once a second unless
+  /// [force]d: the line is long and changes slowly.
+  Future<void> _drawFlow({bool force = false}) async {
+    final map = _map;
+    if (map == null || !_flowAttached || !mounted || _drawingFlow) return;
+    final now = DateTime.now();
+    if (!force && now.difference(_flowDrawnAt) < _flowGap) return;
+    _drawingFlow = true;
+    _flowDrawnAt = now;
+    try {
+      final (flow, times) = _currentFlow();
+      await _flowLayer.update(map, flow);
+      await _flowLayer.updateTimes(map, times);
+    } catch (error) {
+      debugPrint('Could not update the route arrows: $error');
+    } finally {
+      _drawingFlow = false;
     }
   }
 
@@ -415,8 +656,8 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     if (bearing == null || zoom == null || network == null || routeId == null) {
       return pose.position;
     }
-    // The selected route is drawn on the middle of the road.
-    if (ref.read(mapSelectionProvider).routeId == routeId) return pose.position;
+    // The route in focus is drawn on the middle of the road.
+    if (_focusRouteId() == routeId) return pose.position;
     final index = network.routes.indexWhere((route) => route.id == routeId);
     if (index < 0) return pose.position;
     return TransportMapLayers.inLane(
@@ -453,6 +694,8 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     }
     unawaited(_drawBuses());
     if (stopPicked) unawaited(_drawStopFocus());
+    // The covered part of a picked bus's route grows as it moves.
+    if (ref.read(mapSelectionProvider).busId != null) unawaited(_drawFlow());
     if (isFollowing) _followCamera();
   }
 
@@ -465,11 +708,16 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
   void _followCamera() {
     final busId = ref.read(mapSelectionProvider).busId;
     if (busId == null || _movingFollowCamera) return;
+    // The passenger moved the map themselves: leave it where they put it
+    // until they ask to re-centre.
+    if (ref.read(followPausedProvider)) return;
     // Let the turn into following finish before taking over.
     if (DateTime.now().isBefore(_followSettlesAt)) return;
     final pose = _busMotion.poseOf(busId, DateTime.now());
     if (pose == null) return;
-    final heading = pose.headingDegrees;
+    final headingUp = ref.read(followHeadingUpProvider);
+    // North-up: the map turns back to north and stays there.
+    final heading = headingUp ? pose.headingDegrees : 0.0;
     // With no direction to trust, the map keeps facing the way it was.
     _followBearing = heading == null
         ? (_followBearing ?? _camera.bearing)
@@ -480,7 +728,7 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
           );
     _movingFollowCamera = true;
     _camera
-        .trackBus(pose.position, _followBearing!)
+        .trackBus(pose.position, _followBearing!, headingUp: headingUp)
         .catchError(
           (Object error) => debugPrint('Could not follow the bus: $error'),
         )
@@ -498,13 +746,52 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
       final pose = _busMotion.poseOf(selection.busId!, DateTime.now());
       final position = pose?.position ?? _positionOfBus(selection.busId);
       if (position == null) return;
-      _followBearing = pose?.headingDegrees ?? _camera.bearing;
+      final headingUp = ref.read(followHeadingUpProvider);
+      _followBearing = headingUp
+          ? (pose?.headingDegrees ?? _camera.bearing)
+          : 0;
       _followSettlesAt = DateTime.now().add(const Duration(milliseconds: 750));
       _ensureTicking();
-      await _camera.enterFollow(position, headingDegrees: pose?.headingDegrees);
+      await _camera.enterFollow(
+        position,
+        headingDegrees: pose?.headingDegrees,
+        headingUp: headingUp,
+      );
     } else {
       _followBearing = null;
       await _camera.leaveFollow();
+    }
+  }
+
+  /// Brings the camera back to the followed bus: after the passenger
+  /// moved the map away and asked to re-centre, or after they switched
+  /// between turning with the bus and north-up. Their zoom is kept.
+  Future<void> _recentreOnFollowedBus() async {
+    final selection = ref.read(mapSelectionProvider);
+    final busId = selection.busId;
+    if (!_isFollowing || busId == null) return;
+    final pose = _busMotion.poseOf(busId, DateTime.now());
+    final position = pose?.position ?? _positionOfBus(busId);
+    if (position == null) return;
+    final headingUp = ref.read(followHeadingUpProvider);
+    _followBearing = headingUp ? (pose?.headingDegrees ?? _camera.bearing) : 0;
+    _followSettlesAt = DateTime.now().add(const Duration(milliseconds: 750));
+    _ensureTicking();
+    await _camera.enterFollow(
+      position,
+      headingDegrees: pose?.headingDegrees,
+      headingUp: headingUp,
+      keepZoom: true,
+    );
+  }
+
+  /// The passenger moved the map with their fingers. While a bus is being
+  /// followed that puts following on hold, so the map does not snap back
+  /// under their hand.
+  void _onCameraMoveStarted(CameraMoveReason reason) {
+    if (reason != CameraMoveReason.gesture || !_isFollowing) return;
+    if (!ref.read(followPausedProvider)) {
+      ref.read(followPausedProvider.notifier).pause();
     }
   }
 
@@ -532,6 +819,7 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     );
     if (_busLayerAttached) _ensureTicking();
     await _drawBuses();
+    unawaited(_drawFlow());
     // A followed bus is kept in view by the animation clock, frame by
     // frame, so there is nothing more to do here.
     if (_isFollowing) _ensureTicking();
@@ -547,6 +835,7 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     } catch (error) {
       debugPrint('Could not update route and stop layers: $error');
     }
+    unawaited(_drawFlow(force: true));
   }
 
   /// Highlights the selection on the map and brings it into view.
@@ -557,11 +846,17 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
 
     if (_layersAttached) {
       try {
-        await _transportLayers.applySelection(map, network, selection);
+        await _transportLayers.applySelection(
+          map,
+          network,
+          selection,
+          busRouteId: _pickedBusRouteId(),
+        );
       } catch (error) {
         debugPrint('Could not show the selection on the map: $error');
       }
     }
+    unawaited(_drawFlow(force: true));
     _syncStopFocus(selection);
     // Moves the ring to the selected bus.
     await _drawBuses();
@@ -609,6 +904,27 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
       // near it, and the nearest one wins.
       final around = _tapArea(point);
       if (_busLayerAttached) {
+        // Several buses under one marker: ask which one.
+        final groupId = nearestTappedId(
+          await map.queryRenderedFeaturesInRect(
+            around,
+            BusMapLayer.tappableGroupLayers,
+            null,
+          ),
+          coordinates.latitude,
+          coordinates.longitude,
+        );
+        final groupBusIds = groupId == null
+            ? null
+            : BusMapLayer.busIdsOfGroup(groupId);
+        if (groupBusIds != null && mounted) {
+          final picked = await showBusGroupSheet(context, groupBusIds);
+          if (picked != null && mounted) {
+            ref.read(mapSelectionProvider.notifier).selectBus(picked);
+          }
+          return;
+        }
+        if (!mounted) return;
         final busId = nearestTappedId(
           await map.queryRenderedFeaturesInRect(
             around,
@@ -716,6 +1032,7 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
       selection: _hex(scheme.primary),
       label: _hex(scheme.onSurface),
       labelHalo: _hex(scheme.surface),
+      nearest: _hex(Theme.of(context).extension<AppSemanticColors>()!.info),
     );
   }
 
@@ -768,6 +1085,27 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     });
     ref.listen(predictedBusesProvider, (previous, next) {
       unawaited(_drawPredicted());
+    });
+    ref.listen(nearestStopProvider, (previous, next) {
+      unawaited(
+        _transportLayers
+            .showNearestStop(_map, next?.stop.id, attached: _layersAttached)
+            .catchError(
+              (Object error) =>
+                  debugPrint('Could not mark the nearest stop: $error'),
+            ),
+      );
+    });
+    // The arrows turn round with the direction being shown.
+    ref.listen(routeShownReversedProvider, (previous, next) {
+      unawaited(_drawFlow(force: true));
+    });
+    // Re-centre was asked for, or the way the map faces was switched.
+    ref.listen(followPausedProvider, (previous, next) {
+      if (previous == true && !next) unawaited(_recentreOnFollowedBus());
+    });
+    ref.listen(followHeadingUpProvider, (previous, next) {
+      if (previous != next) unawaited(_recentreOnFollowedBus());
     });
 
     final styleJson = style.value;
@@ -824,6 +1162,7 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
       onMapCreated: _onMapCreated,
       onStyleLoadedCallback: _onStyleLoaded,
       onMapClick: _onMapTapped,
+      onCameraMoveStarted: _onCameraMoveStarted,
     );
   }
 }

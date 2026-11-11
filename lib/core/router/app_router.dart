@@ -12,6 +12,7 @@ import '../../features/admin/presentation/stop_editor_screen.dart';
 import '../../features/admin/presentation/timetable_editor_screen.dart';
 import '../../features/about/presentation/about_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/home_widget/application/home_widget_sync.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/routes/presentation/routes_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
@@ -78,7 +79,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
-            UpdateLauncher(child: AppShell(navigationShell: navigationShell)),
+            UpdateLauncher(
+              child: HomeWidgetSync(
+                child: AppShell(navigationShell: navigationShell),
+              ),
+            ),
         branches: [
           StatefulShellBranch(
             routes: [

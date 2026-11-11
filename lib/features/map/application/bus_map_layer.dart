@@ -8,6 +8,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/bus.dart';
 import '../../../data/models/geo_point.dart';
+import 'bus_grouping.dart';
 import 'stop_map_layer.dart' show mapImageScale;
 
 /// Colours for the bus markers, as CSS hex strings.
@@ -176,13 +177,35 @@ Future<Uint8List> paintBusPointer({required Color body}) async {
 /// trusted, a pointer on the badge's rim shows it; otherwise there is no
 /// pointer, because one would claim a direction the app does not have. A
 /// bus with no position gets no marker at all.
+///
+/// A thin ring in the colour of the bus's route goes round the badge, so a
+/// bus is seen to belong to its line. A bus that is not live is faded and
+/// says how long ago it was seen. Buses that would lie on top of each
+/// other are drawn as one marker with a count ([groupsGeoJson]).
 class BusMapLayer {
   static const String source = 'bu-buses';
   static const String pulseLayer = 'bu-bus-pulse';
   static const String selectedLayer = 'bu-bus-selected';
   static const String pointerLayer = 'bu-bus-pointer';
+  static const String routeRingLayer = 'bu-bus-route-ring';
   static const String badgeLayer = 'bu-bus-badge';
   static const String labelLayer = 'bu-bus-label';
+  static const String seenLayer = 'bu-bus-seen';
+
+  static const String groupSource = 'bu-bus-groups';
+  static const String groupBackLayer = 'bu-bus-group-back';
+  static const String groupBadgeLayer = 'bu-bus-group-badge';
+  static const String groupBubbleLayer = 'bu-bus-group-bubble';
+  static const String groupCountLayer = 'bu-bus-group-count';
+  static const String groupLabelLayer = 'bu-bus-group-label';
+
+  /// How strongly a marker is drawn for each status: a position that is
+  /// not fresh recedes, so the eye goes to the buses that are moving.
+  static double opacityOf(BusTrackingStatus status) => switch (status) {
+    BusTrackingStatus.live => 1,
+    BusTrackingStatus.delayed => 0.8,
+    BusTrackingStatus.offline => 0.55,
+  };
 
   /// Side of the square images at their design size; they are drawn on
   /// the map at half of it. The pictures themselves are [mapImageScale]
@@ -197,6 +220,12 @@ class BusMapLayer {
   /// Layers a tap is tested against.
   static const List<String> tappableLayers = [badgeLayer, labelLayer];
 
+  /// Layers a tap on a group of buses is tested against.
+  static const List<String> tappableGroupLayers = [
+    groupBadgeLayer,
+    groupLabelLayer,
+  ];
+
   static String badgeName(BusTrackingStatus status) =>
       'bu-bus-badge-${status.name}';
   static String pointerName(BusTrackingStatus status) =>
@@ -208,13 +237,19 @@ class BusMapLayer {
   /// direction of travel when it can be trusted. [positionOf] lets the
   /// caller draw a bus part-way between two reported positions while it
   /// glides. [pulse] runs from 0 to 1 again and again and drives the ring
-  /// around live buses.
+  /// around live buses. [routeColorOf] gives the colour of the bus's route
+  /// for the ring round its badge. [ageOf] is how old the position is; a
+  /// bus that is not live shows it. Buses in [hiddenIds] are left out:
+  /// they are drawn as part of a group instead.
   static Map<String, dynamic> geoJson(
     List<TrackedBus> buses, {
     required BusTrackingStatus Function(TrackedBus bus) statusOf,
     required double? Function(TrackedBus bus) headingOf,
     required BusMarkerColors colors,
     GeoPoint Function(TrackedBus bus)? positionOf,
+    String? Function(TrackedBus bus)? routeColorOf,
+    Duration? Function(TrackedBus bus)? ageOf,
+    Set<String> hiddenIds = const {},
     String? selectedBusId,
     double pulse = 0,
   }) {
@@ -224,7 +259,7 @@ class BusMapLayer {
       'type': 'FeatureCollection',
       'features': [
         for (final tracked in buses)
-          if (tracked.location != null)
+          if (tracked.location != null && !hiddenIds.contains(tracked.bus.id))
             {
               'type': 'Feature',
               'properties': {
@@ -234,6 +269,11 @@ class BusMapLayer {
                 'badge': badgeName(statusOf(tracked)),
                 'pointer': pointerName(statusOf(tracked)),
                 'selected': tracked.bus.id == selectedBusId,
+                'opacity': opacityOf(statusOf(tracked)),
+                'routeColor': ?routeColorOf?.call(tracked),
+                if (statusOf(tracked) != BusTrackingStatus.live &&
+                    ageOf?.call(tracked) != null)
+                  'seen': 'seen ${seenAgoShort(ageOf!(tracked)!)}',
                 'heading': ?headingOf(tracked),
                 if (statusOf(tracked) == BusTrackingStatus.live) ...{
                   'pulseRadius': 30 + 28 * eased,
@@ -250,6 +290,43 @@ class BusMapLayer {
       ],
     };
   }
+
+  /// The group markers as GeoJSON: one for each set of buses that would
+  /// otherwise cover each other. A group takes the colour of the freshest
+  /// status among its buses.
+  static Map<String, dynamic> groupsGeoJson(
+    List<({BusGroup group, BusTrackingStatus status})> groups, {
+    required BusMarkerColors colors,
+  }) {
+    return {
+      'type': 'FeatureCollection',
+      'features': [
+        for (final (:group, :status) in groups)
+          {
+            'type': 'Feature',
+            'properties': {
+              'id': groupId(group.busIds),
+              'count': '${group.busIds.length}',
+              'label': '${group.busIds.length} buses',
+              'color': colors.of(status),
+              'badge': badgeName(status),
+            },
+            'geometry': {
+              'type': 'Point',
+              'coordinates': group.position.toGeoJson(),
+            },
+          },
+      ],
+    };
+  }
+
+  /// A group's id on the map: its buses' ids, joined.
+  static String groupId(List<String> busIds) => 'group:${busIds.join('|')}';
+
+  /// The ids of the buses in the group with [id], or null if [id] is not a
+  /// group's.
+  static List<String>? busIdsOfGroup(String id) =>
+      id.startsWith('group:') ? id.substring(6).split('|') : null;
 
   static const Map<String, dynamic> _empty = {
     'type': 'FeatureCollection',
@@ -318,6 +395,19 @@ class BusMapLayer {
       filter: const ['has', 'heading'],
       enableInteraction: false,
     );
+    // A ring in the colour of the bus's route, showing just outside the
+    // badge's white rim.
+    await map.addCircleLayer(
+      source,
+      routeRingLayer,
+      const CircleLayerProperties(
+        circleRadius: (badgeRadiusPixels + 5) * markerScale + 3.5,
+        circleColor: ['get', 'routeColor'],
+        circleOpacity: ['get', 'opacity'],
+      ),
+      filter: const ['has', 'routeColor'],
+      enableInteraction: false,
+    );
     await map.addSymbolLayer(
       source,
       badgeLayer,
@@ -325,6 +415,7 @@ class BusMapLayer {
         iconImage: ['get', 'badge'],
         iconSize: markerScale / mapImageScale,
         iconRotationAlignment: 'viewport',
+        iconOpacity: ['get', 'opacity'],
         iconAllowOverlap: true,
         iconIgnorePlacement: true,
       ),
@@ -351,6 +442,103 @@ class BusMapLayer {
       ),
       enableInteraction: false,
     );
+    // How long ago a bus that is not live was seen, under its number.
+    await map.addSymbolLayer(
+      source,
+      seenLayer,
+      SymbolLayerProperties(
+        textField: const ['get', 'seen'],
+        textFont: const ['NotoSans-Medium'],
+        textSize: 11.5,
+        textAnchor: 'top',
+        textOffset: const [
+          'literal',
+          [0, 5.0],
+        ],
+        textColor: colors.label,
+        textOpacity: 0.85,
+        textHaloColor: colors.labelHalo,
+        textHaloWidth: 2,
+        textAllowOverlap: true,
+        textIgnorePlacement: true,
+      ),
+      filter: const ['has', 'seen'],
+      enableInteraction: false,
+    );
+
+    // Buses that would cover each other: one badge with a second one
+    // peeking out behind it, and how many there are.
+    await map.addGeoJsonSource(groupSource, _empty);
+    await map.addCircleLayer(
+      groupSource,
+      groupBackLayer,
+      CircleLayerProperties(
+        circleRadius: badgeRadiusPixels * markerScale,
+        circleColor: const ['get', 'color'],
+        circleStrokeColor: '#ffffff',
+        circleStrokeWidth: 3.5,
+        circleTranslate: const [7, -6],
+      ),
+      enableInteraction: false,
+    );
+    await map.addSymbolLayer(
+      groupSource,
+      groupBadgeLayer,
+      const SymbolLayerProperties(
+        iconImage: ['get', 'badge'],
+        iconSize: markerScale / mapImageScale,
+        iconRotationAlignment: 'viewport',
+        iconAllowOverlap: true,
+        iconIgnorePlacement: true,
+      ),
+      enableInteraction: false,
+    );
+    await map.addCircleLayer(
+      groupSource,
+      groupBubbleLayer,
+      CircleLayerProperties(
+        circleRadius: 11.5,
+        circleColor: colors.label,
+        circleStrokeColor: colors.outline,
+        circleStrokeWidth: 2,
+        circleTranslate: const [21, -21],
+      ),
+      enableInteraction: false,
+    );
+    await map.addSymbolLayer(
+      groupSource,
+      groupCountLayer,
+      SymbolLayerProperties(
+        textField: const ['get', 'count'],
+        textFont: const ['NotoSans-Medium'],
+        textSize: 13,
+        textColor: colors.labelHalo,
+        textTranslate: const [21, -21],
+        textAllowOverlap: true,
+        textIgnorePlacement: true,
+      ),
+      enableInteraction: false,
+    );
+    await map.addSymbolLayer(
+      groupSource,
+      groupLabelLayer,
+      SymbolLayerProperties(
+        textField: const ['get', 'label'],
+        textFont: const ['NotoSans-Medium'],
+        textSize: 13.5,
+        textAnchor: 'top',
+        textOffset: const [
+          'literal',
+          [0, 3.05],
+        ],
+        textColor: colors.label,
+        textHaloColor: colors.labelHalo,
+        textHaloWidth: 2,
+        textAllowOverlap: true,
+        textIgnorePlacement: true,
+      ),
+      enableInteraction: false,
+    );
   }
 
   /// Replaces the markers.
@@ -358,4 +546,10 @@ class BusMapLayer {
     MapLibreMapController map,
     Map<String, dynamic> geoJson,
   ) => map.setGeoJsonSource(source, geoJson);
+
+  /// Replaces the group markers.
+  Future<void> updateGroups(
+    MapLibreMapController map,
+    Map<String, dynamic> geoJson,
+  ) => map.setGeoJsonSource(groupSource, geoJson);
 }

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/services/location_service.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../data/repositories/bus_location_repository.dart';
 import '../../../data/repositories/transport_network_repository.dart';
+import '../../home/application/nearest_stop.dart';
 import '../application/map_camera_controller.dart';
 import '../application/map_selection.dart';
 import '../application/university_map_configuration_provider.dart';
@@ -50,6 +52,10 @@ class _MapControlsState extends ConsumerState<MapControls> {
           _showMessage('You are outside the area this map covers.');
           return;
         }
+        // The nearest-stop card uses the same position.
+        ref
+            .read(userPositionProvider.notifier)
+            .set(position, ref.read(clockProvider)());
         await ref.read(mapCameraControllerProvider).showUserLocation(position);
       case LocationUnavailable(:final problem, :final canFixInSettings):
         _showMessage(

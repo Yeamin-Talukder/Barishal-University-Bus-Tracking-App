@@ -25,21 +25,70 @@ class AppUpdateSection extends ConsumerWidget {
     final semantic = theme.extension<AppSemanticColors>()!;
     final version = controller.currentVersion;
 
-    final (String subtitle, Color color, IconData icon, String action) = switch (state) {
-      UpdateAvailable(:final release) => ('Version ${release.version} is ready to download.', theme.accent, Icons.system_update_rounded, 'Update'),
-      UpdateDownloading(:final fraction) => ('Downloading… ${fraction == null ? '' : '${(fraction * 100).floor()}%'}', theme.accent, Icons.downloading_rounded, 'Open'),
-      UpdateVerifying() => ('Checking the download…', theme.accent, Icons.verified_user_rounded, 'Open'),
-      UpdateReady() || UpdateNeedsPermission() || UpdateInstalling() =>
-        ('The update is downloaded and ready to install.', theme.accent, Icons.install_mobile_rounded, 'Install'),
-      UpdateUpToDate(:final checkedAt) => ('Up to date · checked ${_ago(checkedAt)}', semantic.success, Icons.check_circle_rounded, 'Check'),
-      UpdateFailed() => ('The last check or update did not finish.', theme.colorScheme.error, Icons.error_outline_rounded, 'Retry'),
-      UpdateChecking() => ('Checking for updates…', theme.accent, Icons.sync_rounded, 'Open'),
-      _ => ('Updates install right here in the app.', theme.accent, Icons.system_update_rounded, 'Check'),
+    final (
+      String subtitle,
+      Color color,
+      IconData icon,
+      String action,
+    ) = switch (state) {
+      UpdateAvailable(:final release) => (
+        'Version ${release.version} is ready to download.',
+        theme.accent,
+        Icons.system_update_rounded,
+        'Update',
+      ),
+      UpdateDownloading(:final fraction) => (
+        'Downloading… ${fraction == null ? '' : '${(fraction * 100).floor()}%'}',
+        theme.accent,
+        Icons.downloading_rounded,
+        'Open',
+      ),
+      UpdateVerifying() => (
+        'Checking the download…',
+        theme.accent,
+        Icons.verified_user_rounded,
+        'Open',
+      ),
+      UpdateReady() || UpdateNeedsPermission() || UpdateInstalling() => (
+        'The update is downloaded and ready to install.',
+        theme.accent,
+        Icons.install_mobile_rounded,
+        'Install',
+      ),
+      UpdateUpToDate(:final checkedAt) => (
+        'Up to date · checked ${_ago(checkedAt)}',
+        semantic.success,
+        Icons.check_circle_rounded,
+        'Check',
+      ),
+      UpdateFailed() => (
+        'The last check or update did not finish.',
+        theme.colorScheme.error,
+        Icons.error_outline_rounded,
+        'Retry',
+      ),
+      UpdateChecking() => (
+        'Checking for updates…',
+        theme.accent,
+        Icons.sync_rounded,
+        'Open',
+      ),
+      _ => (
+        'Updates install right here in the app.',
+        theme.accent,
+        Icons.system_update_rounded,
+        'Check',
+      ),
     };
-    final highlight = state is UpdateAvailable || state is UpdateReady || state is UpdateNeedsPermission;
+    final highlight =
+        state is UpdateAvailable ||
+        state is UpdateReady ||
+        state is UpdateNeedsPermission;
 
     Future<void> open() async {
-      if (state is UpdateIdle || state is UpdateUpToDate || (state is UpdateFailed && state.retry == null)) {
+      if (state is UpdateIdle ||
+          state is UpdateUpToDate ||
+          (state is UpdateFailed && state.retry == null)) {
         controller.check(userAsked: true);
       }
       await showUpdateSheet(context);
@@ -50,7 +99,10 @@ class AppUpdateSection extends ConsumerWidget {
       children: [
         ListTile(
           onTap: open,
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.xs,
+          ),
           leading: AnimatedContainer(
             duration: AppMotion.standard,
             width: 40,
@@ -66,11 +118,16 @@ class AppUpdateSection extends ConsumerWidget {
           ),
           title: Text(
             version == null ? 'BU Bus Tracker' : 'Version $version',
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
           subtitle: AnimatedSwitcher(
             duration: AppMotion.quick,
-            layoutBuilder: (current, previous) => Stack(alignment: Alignment.centerLeft, children: [...previous, ?current]),
+            layoutBuilder: (current, previous) => Stack(
+              alignment: Alignment.centerLeft,
+              children: [...previous, ?current],
+            ),
             child: Text(subtitle, key: ValueKey(subtitle)),
           ),
           trailing: highlight
@@ -123,8 +180,14 @@ class _UpdateLauncherState extends ConsumerState<UpdateLauncher> {
   @override
   Widget build(BuildContext context) {
     ref.listen(updateControllerProvider, (previous, next) {
-      if (_offered || next is! UpdateAvailable || previous is! UpdateChecking) return;
-      if (!ref.read(updateControllerProvider.notifier).shouldOffer(next.release)) return;
+      if (_offered || next is! UpdateAvailable || previous is! UpdateChecking) {
+        return;
+      }
+      if (!ref
+          .read(updateControllerProvider.notifier)
+          .shouldOffer(next.release)) {
+        return;
+      }
       _offered = true;
       showUpdateSheet(context);
     });

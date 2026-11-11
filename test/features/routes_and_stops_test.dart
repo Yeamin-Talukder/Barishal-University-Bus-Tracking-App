@@ -324,7 +324,10 @@ void main() {
       container.read(mapSelectionProvider.notifier).selectRoute('north');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Bridge'));
+      // The stop list starts below the direction switch: scroll to it.
+      await tester.ensureVisible(inSheet(find.text('Bridge')));
+      await tester.pumpAndSettle();
+      await tester.tap(inSheet(find.text('Bridge')));
       await tester.pumpAndSettle();
       expect(find.text('Routes at this stop'), findsOneWidget);
 

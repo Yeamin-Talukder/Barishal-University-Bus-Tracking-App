@@ -72,12 +72,16 @@ class ChannelAppInstaller implements AppInstaller {
     });
   }
 
-  static const MethodChannel _channel = MethodChannel('bd.ac.bu.bu_bus_tracker/app_update');
-  final _outcomes = StreamController<({InstallOutcome outcome, String? message})>.broadcast();
+  static const MethodChannel _channel = MethodChannel(
+    'bd.ac.bu.bu_bus_tracker/app_update',
+  );
+  final _outcomes =
+      StreamController<({InstallOutcome outcome, String? message})>.broadcast();
 
   @override
   Future<InstalledApp> installedApp() async {
-    final info = await _channel.invokeMapMethod<String, Object?>('appInfo') ?? const {};
+    final info =
+        await _channel.invokeMapMethod<String, Object?>('appInfo') ?? const {};
     return InstalledApp(
       versionName: '${info['versionName'] ?? '0.0.0'}',
       versionCode: (info['versionCode'] as num?)?.toInt() ?? 0,
@@ -86,14 +90,18 @@ class ChannelAppInstaller implements AppInstaller {
   }
 
   @override
-  Future<bool> canInstall() async => await _channel.invokeMethod<bool>('canInstall') ?? false;
+  Future<bool> canInstall() async =>
+      await _channel.invokeMethod<bool>('canInstall') ?? false;
 
   @override
-  Future<void> openInstallPermission() => _channel.invokeMethod<void>('openInstallSettings');
+  Future<void> openInstallPermission() =>
+      _channel.invokeMethod<void>('openInstallSettings');
 
   @override
-  Future<void> install(String apkPath) => _channel.invokeMethod<void>('install', {'path': apkPath});
+  Future<void> install(String apkPath) =>
+      _channel.invokeMethod<void>('install', {'path': apkPath});
 
   @override
-  Stream<({InstallOutcome outcome, String? message})> get outcomes => _outcomes.stream;
+  Stream<({InstallOutcome outcome, String? message})> get outcomes =>
+      _outcomes.stream;
 }

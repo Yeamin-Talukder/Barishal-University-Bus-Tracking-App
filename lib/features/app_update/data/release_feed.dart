@@ -14,7 +14,7 @@ abstract class ReleaseFeed {
 /// read.
 class GithubReleaseFeed implements ReleaseFeed {
   GithubReleaseFeed({HttpClient Function()? client})
-      : _client = client ?? HttpClient.new;
+    : _client = client ?? HttpClient.new;
 
   final HttpClient Function() _client;
 
@@ -42,12 +42,17 @@ class GithubReleaseFeed implements ReleaseFeed {
         ..set(HttpHeaders.userAgentHeader, 'BU-Bus-Tracker-app')
         // The website's copy changes every few hours; never use a stale one.
         ..set(HttpHeaders.cacheControlHeader, 'no-cache');
-      final response = await request.close().timeout(const Duration(seconds: 20));
+      final response = await request.close().timeout(
+        const Duration(seconds: 20),
+      );
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
         throw HttpException('HTTP ${response.statusCode}', uri: Uri.parse(url));
       }
-      final text = await response.transform(utf8.decoder).join().timeout(const Duration(seconds: 20));
+      final text = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(const Duration(seconds: 20));
       return jsonDecode(text);
     } finally {
       client.close(force: true);

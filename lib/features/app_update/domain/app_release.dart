@@ -32,13 +32,17 @@ class AppVersion implements Comparable<AppVersion> {
   final int patch;
   final String preRelease;
 
-  static final RegExp _pattern = RegExp(r'(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z.-]+))?');
+  static final RegExp _pattern = RegExp(
+    r'(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z.-]+))?',
+  );
 
   /// Reads "1.2.0", "v1.2.0", "1.2" or "1.2.0+7" (the build number is
   /// ignored). Returns null when there is no number to read.
   static AppVersion? tryParse(String? text) {
     if (text == null) return null;
-    final match = _pattern.firstMatch(text.trim().replaceFirst(RegExp('^[vV]'), ''));
+    final match = _pattern.firstMatch(
+      text.trim().replaceFirst(RegExp('^[vV]'), ''),
+    );
     if (match == null) return null;
     return AppVersion(
       int.parse(match.group(1)!),
@@ -50,7 +54,11 @@ class AppVersion implements Comparable<AppVersion> {
 
   @override
   int compareTo(AppVersion other) {
-    for (final (a, b) in [(major, other.major), (minor, other.minor), (patch, other.patch)]) {
+    for (final (a, b) in [
+      (major, other.major),
+      (minor, other.minor),
+      (patch, other.patch),
+    ]) {
       if (a != b) return a.compareTo(b);
     }
     if (preRelease == other.preRelease) return 0;
@@ -62,13 +70,15 @@ class AppVersion implements Comparable<AppVersion> {
   bool operator >(AppVersion other) => compareTo(other) > 0;
 
   @override
-  bool operator ==(Object other) => other is AppVersion && compareTo(other) == 0;
+  bool operator ==(Object other) =>
+      other is AppVersion && compareTo(other) == 0;
 
   @override
   int get hashCode => Object.hash(major, minor, patch, preRelease);
 
   @override
-  String toString() => '$major.$minor.$patch${preRelease.isEmpty ? '' : '-$preRelease'}';
+  String toString() =>
+      '$major.$minor.$patch${preRelease.isEmpty ? '' : '-$preRelease'}';
 }
 
 /// What kind of phone an APK is built for.
@@ -97,12 +107,12 @@ enum ApkBuild {
 
   /// The build for an Android ABI name such as "arm64-v8a".
   static ApkBuild? forAbi(String abi) => switch (abi) {
-        'arm64-v8a' => arm64,
-        'armeabi-v7a' || 'armeabi' => armv7,
-        'x86_64' => x86_64,
-        'x86' => x86,
-        _ => null,
-      };
+    'arm64-v8a' => arm64,
+    'armeabi-v7a' || 'armeabi' => armv7,
+    'x86_64' => x86_64,
+    'x86' => x86,
+    _ => null,
+  };
 }
 
 /// One APK file of a release.
@@ -190,7 +200,9 @@ List<AppRelease> parseReleases(Object? json) {
   for (final item in list) {
     if (item is! Map || item['draft'] == true) continue;
     final tag = '${item['tag_name'] ?? ''}';
-    final version = AppVersion.tryParse(tag) ?? AppVersion.tryParse('${item['name'] ?? ''}');
+    final version =
+        AppVersion.tryParse(tag) ??
+        AppVersion.tryParse('${item['name'] ?? ''}');
     if (version == null) continue;
     final apks = <ReleaseApk>[];
     for (final asset in (item['assets'] as List<dynamic>? ?? const [])) {
@@ -199,24 +211,30 @@ List<AppRelease> parseReleases(Object? json) {
       final url = '${asset['browser_download_url'] ?? ''}';
       if (!name.toLowerCase().endsWith('.apk') || url.isEmpty) continue;
       final digest = asset['digest'];
-      apks.add(ReleaseApk(
-        name: name,
-        url: url,
-        size: (asset['size'] as num?)?.toInt() ?? 0,
-        sha256: digest is String && digest.startsWith('sha256:') ? digest.substring(7).toLowerCase() : null,
-        downloads: (asset['download_count'] as num?)?.toInt() ?? 0,
-      ));
+      apks.add(
+        ReleaseApk(
+          name: name,
+          url: url,
+          size: (asset['size'] as num?)?.toInt() ?? 0,
+          sha256: digest is String && digest.startsWith('sha256:')
+              ? digest.substring(7).toLowerCase()
+              : null,
+          downloads: (asset['download_count'] as num?)?.toInt() ?? 0,
+        ),
+      );
     }
-    result.add(AppRelease(
-      tag: tag,
-      version: version,
-      apks: apks,
-      title: item['name'] as String?,
-      notes: (item['body'] as String?) ?? '',
-      publishedAt: DateTime.tryParse('${item['published_at'] ?? ''}'),
-      pageUrl: item['html_url'] as String?,
-      preRelease: item['prerelease'] == true,
-    ));
+    result.add(
+      AppRelease(
+        tag: tag,
+        version: version,
+        apks: apks,
+        title: item['name'] as String?,
+        notes: (item['body'] as String?) ?? '',
+        publishedAt: DateTime.tryParse('${item['published_at'] ?? ''}'),
+        pageUrl: item['html_url'] as String?,
+        preRelease: item['prerelease'] == true,
+      ),
+    );
   }
   return result;
 }

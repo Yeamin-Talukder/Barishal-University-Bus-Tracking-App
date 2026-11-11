@@ -1142,6 +1142,44 @@ and a red route running under the pin's tip.
   not bundled into the app.
 - The web build still has Flutter's default icons (not requested).
 
+## Home-screen widget (12 November 2026)
+
+"Next bus" on the Android home screen, without opening the app.
+
+- **What it shows:** the next departures for the chosen passenger group,
+  route and direction (Profile → Home-screen widget: Student / Teacher /
+  Staff, a route or all, To campus / From campus / Both), each with the
+  route's colour and number, where it goes, the time, and a countdown.
+  - **Small (2x2):** the next three take turns every 5 s, sliding up.
+  - **Medium and wider:** the next bus in a card (destination, vehicles,
+    time, countdown), the three after it underneath, and a "● N live" pill
+    when buses on those routes were sharing their position recently.
+- **Always right without the app:** the app writes the chosen timetable to
+  its preferences (`widget.data`, read natively as `flutter.widget.data`).
+  `BusWidgetProvider.kt` picks the departures still to come from the clock;
+  after the last one of the day it shows tomorrow's. The countdown is a
+  Chronometer that ticks by itself (under an hour away; "in 2 h 5 min" or
+  "Tomorrow" beyond). An alarm at each departure time (one-minute window, no
+  exact-alarm permission) moves the list on; Android also refreshes it every
+  30 minutes and when the clock or time zone changes.
+- **Live count:** written when the app sees live buses, at most every 20 s,
+  and shown only while under 10 minutes old, so it never claims buses are
+  live from a stale count. Positions themselves are not in the widget: a
+  widget cannot refresh every few seconds.
+- **Look:** Teal Mint, light and dark following the phone, Android 12
+  corner radius, rounded icons (bus, refresh), the app opens on tap.
+- **Profile → Home-screen widget:** a preview drawn with the real next
+  departures, the three choices, and "Add to home screen" (Android's pin
+  request; on launchers without it, a hint to add it from Widgets).
+- **Code:** `lib/features/home_widget/` (choice, snapshot, sync, Profile
+  section), `BusWidgetProvider.kt`, `res/layout/widget_bus_*.xml`,
+  `res/xml/bus_widget_info.xml`, widget colours in `values*/widget_colors.xml`.
+- **Checked:** 6 new tests (departures in order, destination, route and
+  direction filters, snapshot, saved choice, live count); 584 tests pass;
+  analyze clean.
+- **Not yet:** iPhone (WidgetKit needs a Mac); a live-position widget
+  (needs push messages from a server).
+
 ## In-app updates and About page (11 November 2026)
 
 Asked for by the owner: update the app without leaving it.

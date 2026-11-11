@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widget colours, dark (follows the phone's dark mode). -->
+<resources>
+    <color name="widget_bg">#141920</color>
+    <color name="widget_surface">#1A2028</color>
+    <color name="widget_text">#EEF2F6</color>
+    <color name="widget_muted">#AEB8C2</color>
+    <color name="widget_accent">#7FE0CB</color>
+    <color name="widget_accent_soft">#245FD4BC</color>
+    <color name="widget_live">#46D369</color>
+    <color name="widget_live_soft">#2446D369</color>
+    <color name="widget_chip">#232A34</color>
+    <color name="widget_divider">#2E3640</color>
+</resources>

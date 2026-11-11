@@ -722,6 +722,8 @@ void main() {
         'badge': 'bu-bus-badge-live',
         'pointer': 'bu-bus-pointer-live',
         'selected': false,
+        // A live bus is drawn at full strength.
+        'opacity': 1.0,
         // A live bus has a ring; at the start of a pulse it is small and
         // at its strongest.
         'pulseRadius': 30.0,

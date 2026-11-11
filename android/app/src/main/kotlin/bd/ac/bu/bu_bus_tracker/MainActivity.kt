@@ -27,6 +27,29 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // The "Next bus" home-screen widget.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "refresh" -> {
+                    BusWidgetProvider.refreshAll(this)
+                    result.success(null)
+                }
+                "count" -> result.success(BusWidgetProvider.count(this))
+                "pin" -> {
+                    val manager = android.appwidget.AppWidgetManager.getInstance(this)
+                    if (Build.VERSION.SDK_INT >= 26 && manager.isRequestPinAppWidgetSupported) {
+                        result.success(
+                            manager.requestPinAppWidget(
+                                android.content.ComponentName(this, BusWidgetProvider::class.java), null, null,
+                            ),
+                        )
+                    } else {
+                        result.success(false)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).also { ch ->
             ch.setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -157,6 +180,7 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         const val CHANNEL = "bd.ac.bu.bu_bus_tracker/app_update"
+        const val WIDGET_CHANNEL = "bd.ac.bu.bu_bus_tracker/home_widget"
         const val ACTION_INSTALL_STATUS = "bd.ac.bu.bu_bus_tracker.INSTALL_STATUS"
     }
 }

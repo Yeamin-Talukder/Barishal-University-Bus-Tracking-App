@@ -18,6 +18,8 @@ void main() {
       'active': true,
       // The only route: it runs down the middle of the road.
       'lane': 0.0,
+      // The first route is a plain line.
+      'pattern': 0,
     });
     expect(feature['geometry'], {
       'type': 'LineString',

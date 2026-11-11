@@ -21,6 +21,7 @@ import '../../auth/presentation/account_section.dart';
 import '../../driver/presentation/driver_section.dart';
 import '../../map/application/university_map_configuration_provider.dart';
 import '../../app_update/presentation/app_update_section.dart';
+import '../../home_widget/presentation/home_widget_section.dart';
 import '../../map/presentation/offline_map_section.dart';
 import '../../prediction/presentation/predicted_buses_section.dart';
 import 'widgets/theme_mode_selector.dart';
@@ -154,6 +155,8 @@ class ProfileScreen extends ConsumerWidget {
               title: 'Service',
               children: [_BackendStatusTile(status: firebaseStatus)],
             ),
+            gap,
+            const HomeWidgetSection(),
             gap,
             const AppUpdateSection(),
             gap,

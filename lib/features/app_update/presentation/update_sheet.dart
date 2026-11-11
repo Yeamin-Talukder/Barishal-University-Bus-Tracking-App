@@ -29,7 +29,8 @@ class UpdateSheet extends ConsumerStatefulWidget {
   ConsumerState<UpdateSheet> createState() => _UpdateSheetState();
 }
 
-class _UpdateSheetState extends ConsumerState<UpdateSheet> with WidgetsBindingObserver {
+class _UpdateSheetState extends ConsumerState<UpdateSheet>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -61,7 +62,12 @@ class _UpdateSheetState extends ConsumerState<UpdateSheet> with WidgetsBindingOb
       curve: AppMotion.emphasized,
       alignment: Alignment.topCenter,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          0,
+          AppSpacing.xl,
+          AppSpacing.xl,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -73,7 +79,9 @@ class _UpdateSheetState extends ConsumerState<UpdateSheet> with WidgetsBindingOb
                 _title(state),
                 key: ValueKey(_title(state)),
                 textAlign: TextAlign.center,
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -82,7 +90,9 @@ class _UpdateSheetState extends ConsumerState<UpdateSheet> with WidgetsBindingOb
                 _subtitle(state),
                 key: ValueKey(_subtitle(state)),
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
             if (state is UpdateWithRelease) ...[
@@ -90,7 +100,9 @@ class _UpdateSheetState extends ConsumerState<UpdateSheet> with WidgetsBindingOb
               _VersionRow(state: state),
             ],
             const SizedBox(height: AppSpacing.lg),
-            _Switch(child: _Body(key: ValueKey(state.runtimeType), state: state)),
+            _Switch(
+              child: _Body(key: ValueKey(state.runtimeType), state: state),
+            ),
             const SizedBox(height: AppSpacing.xl),
             _Actions(state: state, controller: controller),
             if (state is UpdateWithRelease) ...[
@@ -98,14 +110,20 @@ class _UpdateSheetState extends ConsumerState<UpdateSheet> with WidgetsBindingOb
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.verified_user_rounded, size: 15, color: theme.colorScheme.outline),
+                  Icon(
+                    Icons.verified_user_rounded,
+                    size: 15,
+                    color: theme.colorScheme.outline,
+                  ),
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       'From the project\'s GitHub releases, checked before installing. '
                       'Your settings stay.',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
                     ),
                   ),
                 ],
@@ -118,31 +136,33 @@ class _UpdateSheetState extends ConsumerState<UpdateSheet> with WidgetsBindingOb
   }
 
   static String _title(UpdateState s) => switch (s) {
-        UpdateIdle() || UpdateChecking() => 'Checking for updates',
-        UpdateUnsupported() => 'Updates',
-        UpdateUpToDate() => "You're up to date",
-        UpdateAvailable() => 'Update available',
-        UpdateDownloading() => 'Downloading update',
-        UpdateVerifying() => 'Checking the download',
-        UpdateReady() => 'Ready to install',
-        UpdateNeedsPermission() => 'One more step',
-        UpdateInstalling() => 'Installing',
-        UpdateFailed() => "The update didn't finish",
-      };
+    UpdateIdle() || UpdateChecking() => 'Checking for updates',
+    UpdateUnsupported() => 'Updates',
+    UpdateUpToDate() => "You're up to date",
+    UpdateAvailable() => 'Update available',
+    UpdateDownloading() => 'Downloading update',
+    UpdateVerifying() => 'Checking the download',
+    UpdateReady() => 'Ready to install',
+    UpdateNeedsPermission() => 'One more step',
+    UpdateInstalling() => 'Installing',
+    UpdateFailed() => "The update didn't finish",
+  };
 
   static String _subtitle(UpdateState s) => switch (s) {
-        UpdateIdle() || UpdateChecking() => 'Looking for a newer version…',
-        UpdateUnsupported() => 'On this device the app is updated through its store.',
-        UpdateUpToDate(:final current) => 'Version $current is the newest version.',
-        UpdateAvailable() => 'A new version of BU Bus Tracker is ready for you.',
-        UpdateDownloading() => 'Keep the app open. You can use your phone meanwhile.',
-        UpdateVerifying() => 'Making sure the file is exactly the published one.',
-        UpdateReady(:final note) => note ?? 'The update has downloaded and checked out.',
-        UpdateNeedsPermission() =>
-          'Android asks you once to allow BU Bus Tracker to install its own updates.',
-        UpdateInstalling() => 'Tap Update on the screen Android shows. The app restarts as the new version.',
-        UpdateFailed(:final message) => message,
-      };
+    UpdateIdle() || UpdateChecking() => 'Looking for a newer version…',
+    UpdateUnsupported() =>
+      'On this device the app is updated through its store.',
+    UpdateUpToDate(:final current) => 'Version $current is the newest version.',
+    UpdateAvailable() => 'A new version of BU Bus Tracker is ready for you.',
+    UpdateDownloading() =>
+      'Keep the app open. You can use your phone meanwhile.',
+    UpdateVerifying() => 'Making sure the file is exactly the published one.',
+    UpdateReady(:final note) =>
+      note ?? 'The update has downloaded and checked out.',
+    UpdateNeedsPermission() => 'Android asks you once to allow BU Bus Tracker to install its own updates.',
+    UpdateInstalling() => 'Tap Update on the screen Android shows. The app restarts as the new version.',
+    UpdateFailed(:final message) => message,
+  };
 }
 
 /// Cross-fades and slightly lifts changing content.
@@ -159,7 +179,10 @@ class _Switch extends StatelessWidget {
       transitionBuilder: (child, animation) => FadeTransition(
         opacity: animation,
         child: SlideTransition(
-          position: Tween(begin: const Offset(0, 0.08), end: Offset.zero).animate(animation),
+          position: Tween(
+            begin: const Offset(0, 0.08),
+            end: Offset.zero,
+          ).animate(animation),
           child: child,
         ),
       ),
@@ -182,13 +205,21 @@ class _StatusBadge extends StatefulWidget {
   State<_StatusBadge> createState() => _StatusBadgeState();
 }
 
-class _StatusBadgeState extends State<_StatusBadge> with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600));
+class _StatusBadgeState extends State<_StatusBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  );
 
   bool get _animate => switch (widget.state) {
-        UpdateAvailable() || UpdateChecking() || UpdateIdle() || UpdateVerifying() || UpdateInstalling() => true,
-        _ => false,
-      };
+    UpdateAvailable() ||
+    UpdateChecking() ||
+    UpdateIdle() ||
+    UpdateVerifying() ||
+    UpdateInstalling() => true,
+    _ => false,
+  };
 
   @override
   void initState() {
@@ -203,7 +234,11 @@ class _StatusBadgeState extends State<_StatusBadge> with SingleTickerProviderSta
   }
 
   void _sync() {
-    final reduce = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
+    final reduce = WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations;
     if (_animate && !reduce) {
       if (!_pulse.isAnimating) _pulse.repeat();
     } else {
@@ -234,7 +269,8 @@ class _StatusBadgeState extends State<_StatusBadge> with SingleTickerProviderSta
       UpdateUnsupported() => (Icons.store_rounded, semantic.muted),
       UpdateIdle() || UpdateChecking() => (Icons.sync_rounded, theme.accent),
     };
-    final spinning = s is UpdateChecking || s is UpdateIdle || s is UpdateVerifying;
+    final spinning =
+        s is UpdateChecking || s is UpdateIdle || s is UpdateVerifying;
     final fraction = s is UpdateDownloading ? s.fraction : null;
 
     return SizedBox.square(
@@ -253,7 +289,10 @@ class _StatusBadgeState extends State<_StatusBadge> with SingleTickerProviderSta
                   height: 76 + 30 * t,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: color.withValues(alpha: 0.45 * (1 - t)), width: 2),
+                    border: Border.all(
+                      color: color.withValues(alpha: 0.45 * (1 - t)),
+                      width: 2,
+                    ),
                   ),
                 ),
               // Progress ring while downloading; a turning arc while working.
@@ -272,17 +311,17 @@ class _StatusBadgeState extends State<_StatusBadge> with SingleTickerProviderSta
                         ),
                       )
                     : spinning
-                        ? Transform.rotate(
-                            angle: t * 2 * math.pi,
-                            child: CircularProgressIndicator(
-                              value: 0.28,
-                              strokeWidth: 4,
-                              strokeCap: StrokeCap.round,
-                              color: color,
-                              backgroundColor: color.withValues(alpha: 0.12),
-                            ),
-                          )
-                        : null,
+                    ? Transform.rotate(
+                        angle: t * 2 * math.pi,
+                        child: CircularProgressIndicator(
+                          value: 0.28,
+                          strokeWidth: 4,
+                          strokeCap: StrokeCap.round,
+                          color: color,
+                          backgroundColor: color.withValues(alpha: 0.12),
+                        ),
+                      )
+                    : null,
               ),
               AnimatedContainer(
                 duration: AppMotion.standard,
@@ -294,7 +333,10 @@ class _StatusBadgeState extends State<_StatusBadge> with SingleTickerProviderSta
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [color.withValues(alpha: 0.28), color.withValues(alpha: 0.12)],
+                    colors: [
+                      color.withValues(alpha: 0.28),
+                      color.withValues(alpha: 0.12),
+                    ],
                   ),
                   border: Border.all(color: color.withValues(alpha: 0.35)),
                 ),
@@ -307,9 +349,14 @@ class _StatusBadgeState extends State<_StatusBadge> with SingleTickerProviderSta
                   ),
                   child: s is UpdateDownloading
                       ? Text(
-                          fraction == null ? '…' : '${(fraction * 100).floor()}%',
+                          fraction == null
+                              ? '…'
+                              : '${(fraction * 100).floor()}%',
                           key: const ValueKey('pct'),
-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: color),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: color,
+                          ),
                         )
                       : Icon(icon, key: ValueKey(icon), size: 34, color: color),
                 ),
@@ -331,20 +378,26 @@ class _VersionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     Widget chip(String text, {bool strong = false}) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: strong ? theme.accent.withValues(alpha: 0.14) : theme.colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            border: Border.all(color: strong ? theme.accent.withValues(alpha: 0.4) : theme.colorScheme.outlineVariant),
-          ),
-          child: Text(
-            text,
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: strong ? theme.accent : theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        );
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: strong
+            ? theme.accent.withValues(alpha: 0.14)
+            : theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+          color: strong
+              ? theme.accent.withValues(alpha: 0.4)
+              : theme.colorScheme.outlineVariant,
+        ),
+      ),
+      child: Text(
+        text,
+        style: theme.textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: strong ? theme.accent : theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
 
     return Column(
       children: [
@@ -354,7 +407,11 @@ class _VersionRow extends StatelessWidget {
             chip(state.current.toString()),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-              child: Icon(Icons.arrow_forward_rounded, size: 18, color: theme.colorScheme.outline),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                size: 18,
+                color: theme.colorScheme.outline,
+              ),
             ),
             chip(state.release.version.toString(), strong: true),
           ],
@@ -362,7 +419,9 @@ class _VersionRow extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Text(
           '${state.apk.build.label} build · ${formatBytes(state.apk.size)}',
-          style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -395,22 +454,41 @@ class _Body extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.auto_awesome_rounded, size: 18, color: theme.accent),
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 18,
+                    color: theme.accent,
+                  ),
                   const SizedBox(width: AppSpacing.sm),
-                  Text("What's new", style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                  Text(
+                    "What's new",
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
               Flexible(
                 child: SingleChildScrollView(
-                  child: Text(notes, style: theme.textTheme.bodyMedium?.copyWith(height: 1.45)),
+                  child: Text(
+                    notes,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
+                  ),
                 ),
               ),
             ],
           ),
         );
-      case UpdateDownloading(:final received, :final total, :final bytesPerSecond, :final fraction):
-        final left = bytesPerSecond > 0 && total > received ? (total - received) / bytesPerSecond : null;
+      case UpdateDownloading(
+        :final received,
+        :final total,
+        :final bytesPerSecond,
+        :final fraction,
+      ):
+        final left = bytesPerSecond > 0 && total > received
+            ? (total - received) / bytesPerSecond
+            : null;
         return Column(
           children: [
             ClipRRect(
@@ -431,12 +509,15 @@ class _Body extends StatelessWidget {
               children: [
                 Text(
                   '${formatBytes(received)} of ${formatBytes(total)}',
-                  style: theme.textTheme.labelMedium?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
                 const Spacer(),
                 Text(
                   [
-                    if (bytesPerSecond > 0) '${formatBytes(bytesPerSecond.round())}/s',
+                    if (bytesPerSecond > 0)
+                      '${formatBytes(bytesPerSecond.round())}/s',
                     if (left != null) _timeLeft(left),
                   ].join(' · '),
                   style: theme.textTheme.labelMedium?.copyWith(
@@ -449,16 +530,29 @@ class _Body extends StatelessWidget {
           ],
         );
       case UpdateNeedsPermission():
-        return _Steps(steps: const [
-          (Icons.touch_app_rounded, 'Tap "Allow installs" below.'),
-          (Icons.toggle_on_rounded, 'Turn on "Allow from this source".'),
-          (Icons.keyboard_return_rounded, 'Come back: the install continues by itself.'),
-        ]);
+        return _Steps(
+          steps: const [
+            (Icons.touch_app_rounded, 'Tap "Allow installs" below.'),
+            (Icons.toggle_on_rounded, 'Turn on "Allow from this source".'),
+            (
+              Icons.keyboard_return_rounded,
+              'Come back: the install continues by itself.',
+            ),
+          ],
+        );
       case UpdateInstalling():
-        return _Steps(steps: const [
-          (Icons.system_update_rounded, 'Android shows "Do you want to update this app?"'),
-          (Icons.check_circle_outline_rounded, 'Tap Update. Your settings and saved data stay.'),
-        ]);
+        return _Steps(
+          steps: const [
+            (
+              Icons.system_update_rounded,
+              'Android shows "Do you want to update this app?"',
+            ),
+            (
+              Icons.check_circle_outline_rounded,
+              'Tap Update. Your settings and saved data stay.',
+            ),
+          ],
+        );
       default:
         return const SizedBox.shrink();
     }
@@ -522,74 +616,85 @@ class _Actions extends StatelessWidget {
 
     final (Widget? primary, Widget? secondary) = switch (s) {
       UpdateAvailable() => (
-          FilledButton.icon(
-            onPressed: controller.download,
-            icon: const Icon(Icons.download_rounded),
-            label: Text('Download and install · ${formatBytes(s.apk.size)}'),
-          ),
-          TextButton(
-            onPressed: () {
-              controller.later();
-              close();
-            },
-            child: const Text('Later'),
-          ),
+        FilledButton.icon(
+          onPressed: controller.download,
+          icon: const Icon(Icons.download_rounded),
+          label: Text('Download and install · ${formatBytes(s.apk.size)}'),
         ),
+        TextButton(
+          onPressed: () {
+            controller.later();
+            close();
+          },
+          child: const Text('Later'),
+        ),
+      ),
       UpdateDownloading() => (
-          null,
-          OutlinedButton.icon(
-            onPressed: controller.cancelDownload,
-            icon: const Icon(Icons.close_rounded),
-            label: const Text('Cancel download'),
-          ),
+        null,
+        OutlinedButton.icon(
+          onPressed: controller.cancelDownload,
+          icon: const Icon(Icons.close_rounded),
+          label: const Text('Cancel download'),
         ),
+      ),
       UpdateReady() => (
-          FilledButton.icon(
-            onPressed: controller.install,
-            icon: const Icon(Icons.install_mobile_rounded),
-            label: const Text('Install now'),
-          ),
-          TextButton(onPressed: close, child: const Text('Later')),
+        FilledButton.icon(
+          onPressed: controller.install,
+          icon: const Icon(Icons.install_mobile_rounded),
+          label: const Text('Install now'),
         ),
+        TextButton(onPressed: close, child: const Text('Later')),
+      ),
       UpdateNeedsPermission() => (
-          FilledButton.icon(
-            onPressed: controller.openInstallPermission,
-            icon: const Icon(Icons.lock_open_rounded),
-            label: const Text('Allow installs'),
-          ),
-          TextButton(onPressed: close, child: const Text('Not now')),
+        FilledButton.icon(
+          onPressed: controller.openInstallPermission,
+          icon: const Icon(Icons.lock_open_rounded),
+          label: const Text('Allow installs'),
         ),
+        TextButton(onPressed: close, child: const Text('Not now')),
+      ),
       UpdateInstalling() => (
-          null,
-          TextButton(onPressed: controller.install, child: const Text("Android's screen didn't open? Try again")),
+        null,
+        TextButton(
+          onPressed: controller.install,
+          child: const Text("Android's screen didn't open? Try again"),
         ),
+      ),
       UpdateFailed(:final retry) => (
-          FilledButton.icon(
-            onPressed: retry == null
-                ? () => controller.check(userAsked: true)
-                : retry is UpdateReady
-                    ? controller.install
-                    : controller.download,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Try again'),
-          ),
-          TextButton(onPressed: close, child: const Text('Close')),
+        FilledButton.icon(
+          onPressed: retry == null
+              ? () => controller.check(userAsked: true)
+              : retry is UpdateReady
+              ? controller.install
+              : controller.download,
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Try again'),
         ),
+        TextButton(onPressed: close, child: const Text('Close')),
+      ),
       UpdateUpToDate() => (
-          FilledButton.icon(onPressed: close, icon: const Icon(Icons.check_rounded), label: const Text('Done')),
-          TextButton(
-            onPressed: () => controller.check(userAsked: true),
-            child: const Text('Check again'),
-          ),
+        FilledButton.icon(
+          onPressed: close,
+          icon: const Icon(Icons.check_rounded),
+          label: const Text('Done'),
         ),
-      UpdateIdle() || UpdateChecking() || UpdateVerifying() || UpdateUnsupported() => (null, null),
+        TextButton(
+          onPressed: () => controller.check(userAsked: true),
+          child: const Text('Check again'),
+        ),
+      ),
+      UpdateIdle() ||
+      UpdateChecking() ||
+      UpdateVerifying() ||
+      UpdateUnsupported() => (null, null),
     };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (primary != null) SizedBox(height: 52, child: primary),
-        if (primary != null && secondary != null) const SizedBox(height: AppSpacing.sm),
+        if (primary != null && secondary != null)
+          const SizedBox(height: AppSpacing.sm),
         ?secondary,
       ],
     );
@@ -598,7 +703,9 @@ class _Actions extends StatelessWidget {
 
 /// "35.6 MB", "820 KB".
 String formatBytes(int bytes) {
-  if (bytes >= 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  if (bytes >= 1024 * 1024) {
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
   if (bytes >= 1024) return '${(bytes / 1024).round()} KB';
   return '$bytes B';
 }

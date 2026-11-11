@@ -287,15 +287,15 @@ void main() {
     const onLine = GeoPoint(22.7000, 90.3600);
 
     test('lanes are as far apart as the lines are drawn', () {
-      expect(TransportMapLayers.laneOffsetPixels(10), closeTo(2.6, 1e-9));
-      expect(TransportMapLayers.laneOffsetPixels(14), closeTo(4.6, 1e-9));
+      expect(TransportMapLayers.laneOffsetPixels(10), closeTo(3.4, 1e-9));
+      expect(TransportMapLayers.laneOffsetPixels(14), closeTo(4.8, 1e-9));
       expect(TransportMapLayers.laneOffsetPixels(18), closeTo(7.4, 1e-9));
       // Between the fixed points, and never beyond the ends.
       expect(
         TransportMapLayers.laneOffsetPixels(16),
-        inExclusiveRange(4.6, 7.4),
+        inExclusiveRange(4.8, 7.4),
       );
-      expect(TransportMapLayers.laneOffsetPixels(5), 2.6);
+      expect(TransportMapLayers.laneOffsetPixels(5), 3.4);
       expect(TransportMapLayers.laneOffsetPixels(22), 7.4);
     });
 

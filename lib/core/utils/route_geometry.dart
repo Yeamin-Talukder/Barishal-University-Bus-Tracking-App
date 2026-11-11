@@ -90,6 +90,24 @@ class RouteGeometry {
     );
   }
 
+  /// The part of the route between two distances from its start, as points
+  /// in order from the smaller distance to the larger. Both ends are placed
+  /// exactly, so the part can start or stop in the middle of a stretch.
+  /// Empty when the two distances are the same place.
+  List<GeoPoint> slice(double fromMeters, double toMeters) {
+    final from = fromMeters.clamp(0.0, lengthMeters);
+    final to = toMeters.clamp(0.0, lengthMeters);
+    final low = math.min(from, to);
+    final high = math.max(from, to);
+    if (high - low < 0.01) return const [];
+    return [
+      locate(low).position,
+      for (var i = 0; i < path.length; i++)
+        if (_cumulative[i] > low && _cumulative[i] < high) path[i],
+      locate(high).position,
+    ];
+  }
+
   /// Finds the place on the route nearest to [point].
   ///
   /// Where a route passes the same place twice (a loop, or out and back

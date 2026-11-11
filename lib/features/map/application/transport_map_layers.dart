@@ -19,7 +19,12 @@ class TransportLayerColors {
     required this.selection,
     required this.label,
     required this.labelHalo,
+    this.nearest,
   });
+
+  /// Ring drawn around the stop nearest to the passenger. Defaults to
+  /// [selection].
+  final String? nearest;
 
   final String routeCasing;
   final String stopFill;
@@ -42,6 +47,12 @@ abstract final class TransportGeoJson {
   /// its lane for its whole length.
   static double laneOf(int index, int count) =>
       (index - (count - 1) / 2).clamp(-2.0, 2.0);
+
+  /// The pattern drawn down the middle of the route at [index], so routes
+  /// can be told apart without relying on colour: 0 is a plain line, 1 has
+  /// dashes, 2 has dots. With more than three routes the patterns repeat,
+  /// each time with a different colour.
+  static int patternOf(int index) => index % 3;
 
   /// A stub no longer than this is left out of the drawn line.
   static const double longestStubMeters = 25;
@@ -104,6 +115,7 @@ abstract final class TransportGeoJson {
               'color': route.colorHex,
               'active': route.isActive,
               'lane': laneOf(index, count),
+              'pattern': patternOf(index),
             },
             'geometry': {
               'type': 'LineString',
@@ -152,14 +164,53 @@ abstract final class TransportLayerFilters {
     ['literal', ids.toList()],
   ];
 
+  static List<Object> _pattern(int pattern) => [
+    '==',
+    ['get', 'pattern'],
+    pattern,
+  ];
+
   /// The filter for each transport layer, by layer id.
+  ///
+  /// [busRouteId] is the route of the bus that is picked, if one is. Its
+  /// line is then drawn by the layer that shows how far the bus has come,
+  /// so the plain line is left out here, and the other routes fade back.
   static Map<String, List<Object>> forSelection(
     TransportNetwork network,
-    MapSelection selection,
-  ) {
+    MapSelection selection, {
+    String? busRouteId,
+  }) {
     final route = selection.routeId == null
         ? null
         : network.routeById(selection.routeId!);
+    final busRoute = route == null && busRouteId != null
+        ? network.routeById(busRouteId)
+        : null;
+
+    if (busRoute != null) {
+      final onlyRoute = _only([busRoute.id]);
+      final routeStops = _only(busRoute.stopIds);
+      final terminals = busRoute.stopIds.isEmpty
+          ? none
+          : _only({busRoute.stopIds.first, busRoute.stopIds.last});
+      return {
+        TransportMapLayers.routeDimLayer: ['!', onlyRoute],
+        TransportMapLayers.routeCasingLayer: none,
+        TransportMapLayers.routeLineLayer: none,
+        TransportMapLayers.routeDashLayer: none,
+        TransportMapLayers.routeDotLayer: none,
+        TransportMapLayers.routeFocusGlowLayer: onlyRoute,
+        TransportMapLayers.routeFocusCasingLayer: none,
+        TransportMapLayers.routeFocusLineLayer: none,
+        TransportMapLayers.routeFocusDashLayer: none,
+        TransportMapLayers.routeFocusDotLayer: none,
+        TransportMapLayers.stopDotLayer: routeStops,
+        TransportMapLayers.stopIconLayer: routeStops,
+        TransportMapLayers.stopLabelLayer: routeStops,
+        TransportMapLayers.stopTerminalLayer: terminals,
+        TransportMapLayers.stopSelectedLayer: none,
+      };
+    }
     final stop = selection.stopId == null
         ? null
         : network.stopById(selection.stopId!);
@@ -176,9 +227,13 @@ abstract final class TransportLayerFilters {
         TransportMapLayers.routeDimLayer: ['!', onlyRoute],
         TransportMapLayers.routeCasingLayer: none,
         TransportMapLayers.routeLineLayer: none,
+        TransportMapLayers.routeDashLayer: none,
+        TransportMapLayers.routeDotLayer: none,
         TransportMapLayers.routeFocusGlowLayer: onlyRoute,
         TransportMapLayers.routeFocusCasingLayer: onlyRoute,
         TransportMapLayers.routeFocusLineLayer: onlyRoute,
+        TransportMapLayers.routeFocusDashLayer: ['all', onlyRoute, _pattern(1)],
+        TransportMapLayers.routeFocusDotLayer: ['all', onlyRoute, _pattern(2)],
         TransportMapLayers.stopDotLayer: routeStops,
         TransportMapLayers.stopIconLayer: routeStops,
         TransportMapLayers.stopLabelLayer: routeStops,
@@ -191,9 +246,13 @@ abstract final class TransportLayerFilters {
       TransportMapLayers.routeDimLayer: none,
       TransportMapLayers.routeCasingLayer: all,
       TransportMapLayers.routeLineLayer: all,
+      TransportMapLayers.routeDashLayer: _pattern(1),
+      TransportMapLayers.routeDotLayer: _pattern(2),
       TransportMapLayers.routeFocusGlowLayer: none,
       TransportMapLayers.routeFocusCasingLayer: none,
       TransportMapLayers.routeFocusLineLayer: none,
+      TransportMapLayers.routeFocusDashLayer: none,
+      TransportMapLayers.routeFocusDotLayer: none,
       TransportMapLayers.stopDotLayer: all,
       TransportMapLayers.stopIconLayer: all,
       TransportMapLayers.stopLabelLayer: all,
@@ -220,6 +279,15 @@ class TransportMapLayers {
   static const String routeFocusGlowLayer = 'bu-route-focus-glow';
   static const String routeFocusCasingLayer = 'bu-route-focus-casing';
   static const String routeFocusLineLayer = 'bu-route-focus-line';
+
+  /// The pattern down the middle of a route: dashes or dots.
+  static const String routeDashLayer = 'bu-route-dash';
+  static const String routeDotLayer = 'bu-route-dot';
+  static const String routeFocusDashLayer = 'bu-route-focus-dash';
+  static const String routeFocusDotLayer = 'bu-route-focus-dot';
+
+  /// A ring round the stop nearest to the passenger.
+  static const String stopNearestLayer = 'bu-stop-nearest';
   static const String stopSelectedLayer = 'bu-stop-selected';
   static const String stopDotLayer = 'bu-stop-dot';
   static const String stopIconLayer = 'bu-stop-icon';
@@ -258,8 +326,9 @@ class TransportMapLayers {
   ];
 
   // With every route showing, each is a slim line in its own lane.
-  static final List<Object> _laneWidth = _byZoom(2.0, 3.6, 6.0);
-  static final List<Object> _laneCasingWidth = _byZoom(3.6, 6.0, 9.0);
+  // They stay thick enough to be seen from city level.
+  static final List<Object> _laneWidth = _byZoom(2.8, 3.8, 6.0);
+  static final List<Object> _laneCasingWidth = _byZoom(4.4, 6.2, 9.0);
 
   /// How far a lane sits from the middle of the road: the line's width
   /// plus a hairline of casing between neighbours.
@@ -267,12 +336,12 @@ class TransportMapLayers {
     const [
       '*',
       ['get', 'lane'],
-      2.6,
+      3.4,
     ],
     const [
       '*',
       ['get', 'lane'],
-      4.6,
+      4.8,
     ],
     const [
       '*',
@@ -284,7 +353,7 @@ class TransportMapLayers {
   /// How far, in screen pixels, one lane is from the middle of the road at
   /// [zoom]: the same numbers the route lines are drawn with.
   static double laneOffsetPixels(double zoom) {
-    const stops = [(10.0, 2.6), (14.0, 4.6), (18.0, 7.4)];
+    const stops = [(10.0, 3.4), (14.0, 4.8), (18.0, 7.4)];
     if (zoom <= stops.first.$1) return stops.first.$2;
     if (zoom >= stops.last.$1) return stops.last.$2;
     final upper = stops.indexWhere((stop) => zoom < stop.$1);
@@ -325,8 +394,8 @@ class TransportMapLayers {
   }
 
   // The route in focus is bold, on the middle of the road, with a glow.
-  static final List<Object> _focusWidth = _byZoom(3.5, 6.0, 12.0);
-  static final List<Object> _focusCasingWidth = _byZoom(6.0, 9.5, 17.0);
+  static final List<Object> _focusWidth = _byZoom(4.6, 6.0, 12.0);
+  static final List<Object> _focusCasingWidth = _byZoom(7.0, 9.5, 17.0);
   static final List<Object> _focusGlowWidth = _byZoom(12.0, 20.0, 34.0);
 
   static const List<Object> _stopRadius = [
@@ -412,8 +481,13 @@ class TransportMapLayers {
     MapSelection selection,
     TransportLayerColors colors, {
     required Uint8List stopIcon,
+    String? busRouteId,
   }) async {
-    final filters = TransportLayerFilters.forSelection(network, selection);
+    final filters = TransportLayerFilters.forSelection(
+      network,
+      selection,
+      busRouteId: busRouteId,
+    );
 
     await map.addImage(stopIconImage, stopIcon);
 
@@ -473,6 +547,39 @@ class TransportMapLayers {
       filter: filters[routeLineLayer],
       enableInteraction: false,
     );
+    // A pattern down the middle of every second and third route, in the
+    // casing's colour, so routes differ by more than their colour.
+    await map.addLineLayer(
+      routeSource,
+      routeDashLayer,
+      LineLayerProperties(
+        lineColor: colors.routeCasing,
+        lineWidth: _byZoom(0.9, 1.25, 2.0),
+        lineOffset: _laneOffset,
+        lineDasharray: const [3.2, 3.2],
+        lineCap: 'butt',
+      ),
+      belowLayerId: MapStyleLayers.firstLabel,
+      minzoom: 11.5,
+      filter: filters[routeDashLayer],
+      enableInteraction: false,
+    );
+    await map.addLineLayer(
+      routeSource,
+      routeDotLayer,
+      LineLayerProperties(
+        lineColor: colors.routeCasing,
+        lineWidth: _byZoom(1.2, 1.7, 2.6),
+        lineOffset: _laneOffset,
+        // A dash of almost no length with round ends is a dot.
+        lineDasharray: const [0.01, 2.8],
+        lineCap: 'round',
+      ),
+      belowLayerId: MapStyleLayers.firstLabel,
+      minzoom: 11.5,
+      filter: filters[routeDotLayer],
+      enableInteraction: false,
+    );
     // The selected route: a soft glow in its colour, a casing, the line.
     await map.addLineLayer(
       routeSource,
@@ -519,6 +626,56 @@ class TransportMapLayers {
       ),
       belowLayerId: MapStyleLayers.firstLabel,
       filter: filters[routeFocusLineLayer],
+      enableInteraction: false,
+    );
+    await map.addLineLayer(
+      routeSource,
+      routeFocusDashLayer,
+      LineLayerProperties(
+        lineColor: colors.routeCasing,
+        lineWidth: _byZoom(1.4, 1.9, 3.8),
+        lineDasharray: const [3.2, 3.2],
+        lineCap: 'butt',
+      ),
+      belowLayerId: MapStyleLayers.firstLabel,
+      filter: filters[routeFocusDashLayer],
+      enableInteraction: false,
+    );
+    await map.addLineLayer(
+      routeSource,
+      routeFocusDotLayer,
+      LineLayerProperties(
+        lineColor: colors.routeCasing,
+        lineWidth: _byZoom(1.8, 2.5, 4.8),
+        lineDasharray: const [0.01, 2.8],
+        lineCap: 'round',
+      ),
+      belowLayerId: MapStyleLayers.firstLabel,
+      filter: filters[routeFocusDotLayer],
+      enableInteraction: false,
+    );
+    // A ring round the stop nearest to the passenger.
+    await map.addCircleLayer(
+      stopSource,
+      stopNearestLayer,
+      CircleLayerProperties(
+        circleRadius: const [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          11,
+          9,
+          14,
+          17,
+          18,
+          30,
+        ],
+        circleColor: colors.nearest ?? colors.selection,
+        circleOpacity: 0.14,
+        circleStrokeColor: colors.nearest ?? colors.selection,
+        circleStrokeWidth: 2.5,
+      ),
+      filter: _nearestFilter(),
       enableInteraction: false,
     );
     // A halo behind the selected stop.
@@ -617,14 +774,45 @@ class TransportMapLayers {
   }
 
   /// Shows [selection] by changing which features each layer draws.
+  /// [busRouteId] is the route of the picked bus, if a bus is picked.
   Future<void> applySelection(
     MapLibreMapController map,
     TransportNetwork network,
-    MapSelection selection,
-  ) async {
-    final filters = TransportLayerFilters.forSelection(network, selection);
+    MapSelection selection, {
+    String? busRouteId,
+  }) async {
+    final filters = TransportLayerFilters.forSelection(
+      network,
+      selection,
+      busRouteId: busRouteId,
+    );
     for (final MapEntry(key: layerId, value: filter) in filters.entries) {
       await map.setLayerFilter(layerId, filter);
     }
+  }
+
+  /// The stop that has the "nearest to you" ring, remembered so the ring
+  /// comes back after the map's style is loaded again.
+  String? _nearestStopId;
+
+  List<Object> _nearestFilter() => _nearestStopId == null
+      ? TransportLayerFilters.none
+      : [
+          '==',
+          ['get', 'id'],
+          _nearestStopId!,
+        ];
+
+  /// Rings the stop nearest to the passenger, or none when [stopId] is
+  /// null. [attached] says whether the layers are on the map yet; if not,
+  /// the ring is drawn when they are.
+  Future<void> showNearestStop(
+    MapLibreMapController? map,
+    String? stopId, {
+    required bool attached,
+  }) async {
+    _nearestStopId = stopId;
+    if (map == null || !attached) return;
+    await map.setLayerFilter(stopNearestLayer, _nearestFilter());
   }
 }

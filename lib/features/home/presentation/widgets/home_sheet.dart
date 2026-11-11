@@ -12,17 +12,19 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../data/models/bus.dart';
 import '../../../../data/models/bus_route.dart';
-import '../../../../data/models/bus_stop.dart';
 import '../../../../data/models/transport_network.dart';
 import '../../../../data/repositories/bus_location_repository.dart';
 import '../../../../data/repositories/transport_network_repository.dart';
 import '../../../../shared/widgets/route_card.dart';
 import '../../../buses/presentation/arrival_text.dart';
+import '../../../alerts/presentation/arrival_alert_views.dart';
 import '../../../buses/presentation/bus_card.dart';
-import '../../../buses/presentation/bus_journey.dart';
 import '../../../buses/presentation/bus_details_view.dart';
 import '../../../map/application/map_selection.dart';
+import '../../../map/application/map_view_state.dart';
 import '../../../prediction/presentation/predicted_buses_section.dart';
+import '../../application/stop_arrivals.dart';
+import 'nearest_stop_card.dart';
 import 'selection_details.dart';
 
 /// The draggable sheet over the map.
@@ -30,8 +32,15 @@ import 'selection_details.dart';
 /// With nothing selected it summarises the buses and lists the routes. When
 /// the passenger picks a route, stop or bus, it shows that instead and opens
 /// far enough to read it.
+///
+/// On a wide screen ([asPanel]) the same content is a panel at the side of
+/// the map instead: it does not slide, it is simply there.
 class HomeSheet extends ConsumerStatefulWidget {
-  const HomeSheet({super.key});
+  const HomeSheet({this.asPanel = false, super.key});
+
+  /// Whether to be a fixed panel beside the map rather than a sheet that
+  /// slides up over it.
+  final bool asPanel;
 
   /// Fractions of the available height the sheet rests at.
   static const double collapsedSize = 0.17;
@@ -44,10 +53,12 @@ class HomeSheet extends ConsumerStatefulWidget {
 
 class _HomeSheetState extends ConsumerState<HomeSheet> {
   final DraggableScrollableController _sheet = DraggableScrollableController();
+  final ScrollController _panelScroll = ScrollController();
 
   @override
   void dispose() {
     _sheet.dispose();
+    _panelScroll.dispose();
     super.dispose();
   }
 
@@ -66,8 +77,35 @@ class _HomeSheetState extends ConsumerState<HomeSheet> {
     final scheme = Theme.of(context).colorScheme;
 
     ref.listen(mapSelectionProvider, (previous, next) {
-      if (!next.isEmpty && next != previous) _reveal();
+      if (next.isEmpty || next == previous) return;
+      if (!widget.asPanel) return _reveal();
+      // What was picked is shown from its top.
+      if (_panelScroll.hasClients) _panelScroll.jumpTo(0);
     });
+
+    if (widget.asPanel) {
+      return Material(
+        color: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        shadowColor: Colors.black.withValues(alpha: 0.4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: PointerInterceptor(
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context)
+                .copyWith(dragDevices: PointerDeviceKind.values.toSet()),
+            child: _SheetContent(
+              scrollController: _panelScroll,
+              showHandle: false,
+            ),
+          ),
+        ),
+      );
+    }
 
     return DraggableScrollableSheet(
       controller: _sheet,
@@ -102,9 +140,12 @@ class _HomeSheetState extends ConsumerState<HomeSheet> {
 }
 
 class _SheetContent extends ConsumerWidget {
-  const _SheetContent({required this.scrollController});
+  const _SheetContent({required this.scrollController, this.showHandle = true});
 
   final ScrollController scrollController;
+
+  /// Whether to draw the bar that says the sheet can be dragged.
+  final bool showHandle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -133,6 +174,9 @@ class _SheetContent extends ConsumerWidget {
         stops: network.stopsOf(route),
         onStopSelected: (stop) => select.selectStop(stop.id),
         onClose: select.clear,
+        // The arrows on the map point the way the stops are listed.
+        reversed: ref.watch(routeShownReversedProvider),
+        onSwapDirection: ref.read(routeShownReversedProvider.notifier).toggle,
       );
     } else if (network != null && stop != null) {
       final routesHere = network.routesServing(stop.id);
@@ -148,7 +192,13 @@ class _SheetContent extends ConsumerWidget {
         onRouteSelected: (route) => select.selectRoute(route.id),
         onClose: select.clear,
         hasTrackedBuses: busesHere.isNotEmpty,
-        approaching: _approaching(ref, network, stop, busesHere),
+        approaching: ref.watch(stopArrivalsProvider(stop.id)),
+        arrivalActionBuilder: (arrival) => ArrivalAlertButton(
+          busId: arrival.bus.bus.id,
+          busNumber: arrival.bus.bus.number,
+          stopId: stop.id,
+          stopName: stop.name,
+        ),
         predictedArrivals: PredictedArrivalsSection(stopId: stop.id),
         onBusSelected: (tracked) => select.selectBus(tracked.bus.id),
       );
@@ -185,7 +235,10 @@ class _SheetContent extends ConsumerWidget {
       controller: scrollController,
       padding: const EdgeInsets.only(bottom: AppSpacing.xl),
       children: [
-        const _DragHandle(),
+        if (showHandle)
+          const _DragHandle()
+        else
+          const SizedBox(height: AppSpacing.lg),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
           switchInCurve: Curves.easeOut,
@@ -200,48 +253,6 @@ class _SheetContent extends ConsumerWidget {
       ],
     );
   }
-}
-
-/// The buses that can be given an arrival estimate for [stop], soonest
-/// first.
-List<ApproachingBus> _approaching(
-  WidgetRef ref,
-  TransportNetwork network,
-  BusStop stop,
-  List<TrackedBus> buses,
-) {
-  final eta = ref.watch(etaServiceProvider);
-  final now = ref.watch(clockProvider)();
-  final arrivals = <ApproachingBus>[];
-  for (final tracked in buses) {
-    final route = network.routeById(tracked.bus.routeId!);
-    if (route == null) continue;
-    final estimate = eta.estimateArrival(
-      route: route,
-      stops: network.stopsOf(route),
-      stop: stop,
-      location: tracked.location,
-      now: now,
-    );
-    if (estimate is ArrivalEstimated) {
-      arrivals.add(
-        ApproachingBus(
-          bus: tracked,
-          routeName: route.name,
-          estimate: estimate,
-          // An estimate is only made for a live bus.
-          journey: busJourney(
-            eta: eta,
-            network: network,
-            tracked: tracked,
-            status: BusTrackingStatus.live,
-          ),
-        ),
-      );
-    }
-  }
-  return arrivals
-    ..sort((a, b) => a.estimate.travelTime.compareTo(b.estimate.travelTime));
 }
 
 class _DragHandle extends StatelessWidget {
@@ -289,6 +300,7 @@ class _Overview extends ConsumerWidget {
       children: [
         const AnnouncementList(),
         _TrackingSummary(busCount: buses.length, liveCount: liveCount),
+        const NearestStopCard(),
         if (buses.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.sm),
           for (final tracked in buses)

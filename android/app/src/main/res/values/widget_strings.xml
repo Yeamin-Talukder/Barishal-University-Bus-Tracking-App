@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Your next university buses, with a live countdown.</string>
+    <string name="widget_label">Next bus</string>
+    <dimen name="widget_radius">22dp</dimen>
+    <dimen name="widget_inner_radius">14dp</dimen>
+</resources>

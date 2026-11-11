@@ -17,10 +17,14 @@ final appInstallerProvider = Provider<AppInstaller?>((ref) {
   return ChannelAppInstaller();
 });
 final releaseFeedProvider = Provider<ReleaseFeed>((ref) => GithubReleaseFeed());
-final apkDownloaderProvider = Provider<ApkDownloader>((ref) => HttpApkDownloader());
+final apkDownloaderProvider = Provider<ApkDownloader>(
+  (ref) => HttpApkDownloader(),
+);
 
 /// Time, for tests.
-final updateClockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+final updateClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
 
 final updateControllerProvider =
     NotifierProvider<UpdateController, UpdateState>(UpdateController.new);
@@ -47,7 +51,11 @@ class UpdateChecking extends UpdateState {
 }
 
 class UpdateUpToDate extends UpdateState {
-  const UpdateUpToDate({required this.current, required this.checkedAt, this.latest});
+  const UpdateUpToDate({
+    required this.current,
+    required this.checkedAt,
+    this.latest,
+  });
   final AppVersion current;
   final DateTime checkedAt;
 
@@ -57,14 +65,22 @@ class UpdateUpToDate extends UpdateState {
 
 /// Something the person can act on: a release and the file for this phone.
 sealed class UpdateWithRelease extends UpdateState {
-  const UpdateWithRelease({required this.current, required this.release, required this.apk});
+  const UpdateWithRelease({
+    required this.current,
+    required this.release,
+    required this.apk,
+  });
   final AppVersion current;
   final AppRelease release;
   final ReleaseApk apk;
 }
 
 class UpdateAvailable extends UpdateWithRelease {
-  const UpdateAvailable({required super.current, required super.release, required super.apk});
+  const UpdateAvailable({
+    required super.current,
+    required super.release,
+    required super.apk,
+  });
 }
 
 class UpdateDownloading extends UpdateWithRelease {
@@ -80,12 +96,17 @@ class UpdateDownloading extends UpdateWithRelease {
   final int total;
   final double bytesPerSecond;
 
-  double? get fraction => total > 0 ? (received / total).clamp(0, 1).toDouble() : null;
+  double? get fraction =>
+      total > 0 ? (received / total).clamp(0, 1).toDouble() : null;
 }
 
 /// Checking the file against the SHA-256 GitHub published.
 class UpdateVerifying extends UpdateWithRelease {
-  const UpdateVerifying({required super.current, required super.release, required super.apk});
+  const UpdateVerifying({
+    required super.current,
+    required super.release,
+    required super.apk,
+  });
 }
 
 class UpdateReady extends UpdateWithRelease {
@@ -104,13 +125,23 @@ class UpdateReady extends UpdateWithRelease {
 
 /// Android has to be told once that this app may install updates.
 class UpdateNeedsPermission extends UpdateWithRelease {
-  const UpdateNeedsPermission({required super.current, required super.release, required super.apk, required this.file});
+  const UpdateNeedsPermission({
+    required super.current,
+    required super.release,
+    required super.apk,
+    required this.file,
+  });
   final String file;
 }
 
 /// Handed to Android, which is asking the person to confirm.
 class UpdateInstalling extends UpdateWithRelease {
-  const UpdateInstalling({required super.current, required super.release, required super.apk, required this.file});
+  const UpdateInstalling({
+    required super.current,
+    required super.release,
+    required super.apk,
+    required this.file,
+  });
   final String file;
 }
 
@@ -147,13 +178,18 @@ class UpdateController extends Notifier<UpdateState> {
   AppInstaller get _installer => ref.read(appInstallerProvider)!;
 
   /// The version installed now, once known.
-  AppVersion? get currentVersion => _app == null ? null : AppVersion.tryParse(_app!.versionName);
+  AppVersion? get currentVersion =>
+      _app == null ? null : AppVersion.tryParse(_app!.versionName);
 
   /// Looks for a newer release. Automatic checks ([userAsked] false) happen
   /// at most every [autoCheckEvery] and are silent when they fail.
   Future<void> check({bool userAsked = false}) async {
     if (state is UpdateUnsupported) return;
-    if (state is UpdateDownloading || state is UpdateVerifying || state is UpdateInstalling) return;
+    if (state is UpdateDownloading ||
+        state is UpdateVerifying ||
+        state is UpdateInstalling) {
+      return;
+    }
     final prefs = ref.read(sharedPreferencesProvider);
     final now = ref.read(updateClockProvider)();
     // An automatic check runs once per start of the app; it reads the
@@ -170,10 +206,18 @@ class UpdateController extends Notifier<UpdateState> {
         final latest = releases.isEmpty
             ? null
             : releases.map((r) => r.version).reduce((a, b) => a > b ? a : b);
-        state = UpdateUpToDate(current: current, checkedAt: now, latest: latest);
+        state = UpdateUpToDate(
+          current: current,
+          checkedAt: now,
+          latest: latest,
+        );
         await ref.read(apkDownloaderProvider).clear();
       } else {
-        state = UpdateAvailable(current: current, release: found.release, apk: found.apk);
+        state = UpdateAvailable(
+          current: current,
+          release: found.release,
+          apk: found.apk,
+        );
       }
     } catch (error) {
       if (!userAsked) {
@@ -197,7 +241,9 @@ class UpdateController extends Notifier<UpdateState> {
   Future<void> later() async {
     final s = state;
     if (s is UpdateWithRelease) {
-      await ref.read(sharedPreferencesProvider).setString(laterKey, s.release.tag);
+      await ref
+          .read(sharedPreferencesProvider)
+          .setString(laterKey, s.release.tag);
     }
   }
 
@@ -212,44 +258,78 @@ class UpdateController extends Notifier<UpdateState> {
     final started = DateTime.now();
     var lastEmit = DateTime.fromMillisecondsSinceEpoch(0);
     state = UpdateDownloading(
-      current: from.current, release: from.release, apk: from.apk,
-      received: 0, total: from.apk.size, bytesPerSecond: 0,
+      current: from.current,
+      release: from.release,
+      apk: from.apk,
+      received: 0,
+      total: from.apk.size,
+      bytesPerSecond: 0,
     );
     try {
-      final file = await ref.read(apkDownloaderProvider).download(
-        from.apk,
-        cancel: cancel,
-        onProgress: (received, total) {
-          final now = DateTime.now();
-          // Enough for a smooth bar without rebuilding on every packet.
-          if (received != total && now.difference(lastEmit) < const Duration(milliseconds: 80)) return;
-          lastEmit = now;
-          final seconds = now.difference(started).inMilliseconds / 1000;
-          state = UpdateDownloading(
-            current: from.current, release: from.release, apk: from.apk,
-            received: received, total: total,
-            bytesPerSecond: seconds > 0.3 ? received / seconds : 0,
+      final file = await ref
+          .read(apkDownloaderProvider)
+          .download(
+            from.apk,
+            cancel: cancel,
+            onProgress: (received, total) {
+              final now = DateTime.now();
+              // Enough for a smooth bar without rebuilding on every packet.
+              if (received != total &&
+                  now.difference(lastEmit) < const Duration(milliseconds: 80)) {
+                return;
+              }
+              lastEmit = now;
+              final seconds = now.difference(started).inMilliseconds / 1000;
+              state = UpdateDownloading(
+                current: from.current,
+                release: from.release,
+                apk: from.apk,
+                received: received,
+                total: total,
+                bytesPerSecond: seconds > 0.3 ? received / seconds : 0,
+              );
+            },
+            onVerifying: () {
+              state = UpdateVerifying(
+                current: from.current,
+                release: from.release,
+                apk: from.apk,
+              );
+            },
           );
-        },
-        onVerifying: () {
-          state = UpdateVerifying(current: from.current, release: from.release, apk: from.apk);
-        },
+      state = UpdateReady(
+        current: from.current,
+        release: from.release,
+        apk: from.apk,
+        file: file.path,
       );
-      state = UpdateReady(current: from.current, release: from.release, apk: from.apk, file: file.path);
       await install();
     } on DownloadCancelled {
-      state = UpdateAvailable(current: from.current, release: from.release, apk: from.apk);
+      state = UpdateAvailable(
+        current: from.current,
+        release: from.release,
+        apk: from.apk,
+      );
     } on ChecksumMismatch {
       state = UpdateFailed(
         current: from.current,
-        retry: UpdateAvailable(current: from.current, release: from.release, apk: from.apk),
-        message: 'The downloaded file did not match the published one, so it was not installed. '
+        retry: UpdateAvailable(
+          current: from.current,
+          release: from.release,
+          apk: from.apk,
+        ),
+        message:
+            'The downloaded file did not match the published one, so it was not installed. '
             'Please try again.',
       );
     } on DownloadFailed catch (error) {
       state = UpdateFailed(
         current: from.current,
-        retry: UpdateAvailable(current: from.current, release: from.release, apk: from.apk),
+        retry: UpdateAvailable(
+          current: from.current,
+          release: from.release,
+          apk: from.apk,
+        ),
         message: error.message,
       );
     } finally {
@@ -275,16 +355,31 @@ class UpdateController extends Notifier<UpdateState> {
         return;
     }
     if (!await _installer.canInstall()) {
-      state = UpdateNeedsPermission(current: s.current, release: s.release, apk: s.apk, file: file);
+      state = UpdateNeedsPermission(
+        current: s.current,
+        release: s.release,
+        apk: s.apk,
+        file: file,
+      );
       return;
     }
-    state = UpdateInstalling(current: s.current, release: s.release, apk: s.apk, file: file);
+    state = UpdateInstalling(
+      current: s.current,
+      release: s.release,
+      apk: s.apk,
+      file: file,
+    );
     try {
       await _installer.install(file);
     } catch (error) {
       state = UpdateFailed(
         current: s.current,
-        retry: UpdateReady(current: s.current, release: s.release, apk: s.apk, file: file),
+        retry: UpdateReady(
+          current: s.current,
+          release: s.release,
+          apk: s.apk,
+          file: file,
+        ),
         message: 'Android could not start the install. Please try again.',
       );
     }
@@ -296,7 +391,12 @@ class UpdateController extends Notifier<UpdateState> {
   Future<void> onResumed() async {
     final s = state;
     if (s is UpdateNeedsPermission && await _installer.canInstall()) {
-      state = UpdateReady(current: s.current, release: s.release, apk: s.apk, file: s.file);
+      state = UpdateReady(
+        current: s.current,
+        release: s.release,
+        apk: s.apk,
+        file: s.file,
+      );
       await install();
     }
   }
@@ -304,30 +404,49 @@ class UpdateController extends Notifier<UpdateState> {
   void _onInstallOutcome(({InstallOutcome outcome, String? message}) event) {
     final s = state;
     if (s is! UpdateInstalling) return;
-    UpdateReady ready(String note) =>
-        UpdateReady(current: s.current, release: s.release, apk: s.apk, file: s.file, note: note);
+    UpdateReady ready(String note) => UpdateReady(
+      current: s.current,
+      release: s.release,
+      apk: s.apk,
+      file: s.file,
+      note: note,
+    );
     switch (event.outcome) {
       case InstallOutcome.confirming || InstallOutcome.success:
         break; // Android takes over; on success the app restarts as the new version.
       case InstallOutcome.cancelled:
-        state = ready('The install was cancelled. You can install it whenever you like.');
+        state = ready(
+          'The install was cancelled. You can install it whenever you like.',
+        );
       case InstallOutcome.conflict:
         state = UpdateFailed(
           current: s.current,
-          message: 'This version is signed with a different key than the one on your phone, so '
+          message:
+              'This version is signed with a different key than the one on your phone, so '
               'Android will not update over it. Uninstall the app once, then install the new '
               'version from the website.',
         );
       case InstallOutcome.storage:
-        state = ready('There is not enough free space to install the update. Free some space and try again.');
+        state = ready(
+          'There is not enough free space to install the update. Free some space and try again.',
+        );
       case InstallOutcome.incompatible:
-        state = UpdateFailed(current: s.current, message: 'This version does not work on this phone.');
+        state = UpdateFailed(
+          current: s.current,
+          message: 'This version does not work on this phone.',
+        );
       case InstallOutcome.blocked:
-        state = ready('The install was blocked on this phone (for example by a work profile or Play Protect).');
+        state = ready(
+          'The install was blocked on this phone (for example by a work profile or Play Protect).',
+        );
       case InstallOutcome.invalid || InstallOutcome.failure:
         state = UpdateFailed(
           current: s.current,
-          retry: UpdateAvailable(current: s.current, release: s.release, apk: s.apk),
+          retry: UpdateAvailable(
+            current: s.current,
+            release: s.release,
+            apk: s.apk,
+          ),
           message: 'Android could not install the update. Please try again.',
         );
     }
