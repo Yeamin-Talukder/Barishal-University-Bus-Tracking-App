@@ -42,8 +42,11 @@ Settings → Secrets and variables → Actions → New repository secret.
 |---|---|
 | `ANDROID_KEYSTORE_BASE64` | The signing key, base64. |
 | `GOOGLE_SERVICES_JSON` | `android/app/google-services.json`, base64. It is not in git. |
+| `FIREBASE_OPTIONS_DART` | The real `lib/firebase_options.dart`, base64. Git holds only a placeholder; an app built with it has no tracking backend. |
 
-Without them the workflow still checks and tests, but refuses to release.
+Without them the workflow still checks and tests (against the placeholder
+Firebase options, as anyone cloning the repository would), but refuses to
+release.
 
 **The signing key must stay the same for every release.** Android only
 installs an update signed with the same key as the installed app, and
@@ -59,6 +62,7 @@ that has the key (PowerShell):
 ```powershell
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\.android\debug.keystore")) | gh secret set ANDROID_KEYSTORE_BASE64
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("android\app\google-services.json")) | gh secret set GOOGLE_SERVICES_JSON
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("lib\firebase_options.dart")) | gh secret set FIREBASE_OPTIONS_DART
 ```
 
 Keep a backup of the key file somewhere safe: if it is lost, no update can

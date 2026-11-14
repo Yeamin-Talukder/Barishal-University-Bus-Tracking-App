@@ -10,6 +10,9 @@
 # One-time setup, Settings → Secrets and variables → Actions:
 #   ANDROID_KEYSTORE_BASE64  the signing key (.jks / .keystore), base64
 #   GOOGLE_SERVICES_JSON     android/app/google-services.json, base64
+#   FIREBASE_OPTIONS_DART    lib/firebase_options.dart, base64 (git holds
+#                            only a placeholder; without the real one the
+#                            app would have no tracking backend)
 # Optional, for a key other than Android's debug key:
 #   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
 # See RELEASING.md.
@@ -38,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: subosito/flutter-action@v2
         with:
@@ -68,7 +71,7 @@ jobs:
       contents: write
       actions: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # Tags and history, for the version check and the notes.
           fetch-depth: 0
@@ -82,13 +85,15 @@ jobs:
         env:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS_DART }}
         run: |
           missing=""
           [ -n "$KEYSTORE" ] || missing="$missing ANDROID_KEYSTORE_BASE64"
           [ -n "$GOOGLE_SERVICES" ] || missing="$missing GOOGLE_SERVICES_JSON"
+          [ -n "$FIREBASE_OPTIONS" ] || missing="$missing FIREBASE_OPTIONS_DART"
           if [ -n "$missing" ]; then
-            # Never publish with another key: phones would refuse the update
-            # and Google sign-in would stop working.
+            # Never publish with another key (phones would refuse the
+            # update, Google sign-in would stop) or without the backend.
             echo "::error::Add these repository secrets before releasing:$missing (see RELEASING.md)."
             exit 1
           fi
@@ -113,9 +118,13 @@ jobs:
         env:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS_DART }}
         run: |
           echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.keystore"
           echo "$GOOGLE_SERVICES" | base64 --decode > android/app/google-services.json
+          echo "$FIREBASE_OPTIONS" | base64 --decode > lib/firebase_options.dart
+          # The placeholder has no options; make sure the real file arrived.
+          grep -q "static const FirebaseOptions android" lib/firebase_options.dart             || { echo "::error::FIREBASE_OPTIONS_DART is not a flutterfire-generated firebase_options.dart"; exit 1; }
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
 
       - name: Build the APKs

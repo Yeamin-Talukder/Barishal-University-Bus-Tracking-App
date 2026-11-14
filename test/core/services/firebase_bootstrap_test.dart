@@ -1,5 +1,6 @@
+import 'dart:io';
+
 import 'package:bu_bus_tracker/core/services/firebase_bootstrap.dart';
-import 'package:bu_bus_tracker/firebase_options.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -23,13 +24,21 @@ void main() {
       expect(status.detail, contains('Not configured'));
     });
 
-    test('the generated options point at the bus tracker project', () {
-      expect(DefaultFirebaseOptions.android.projectId, 'bus-tracker-162c0');
-      expect(
-        DefaultFirebaseOptions.android.databaseURL,
-        contains('asia-southeast1'),
-      );
-    });
+    // The real options are not published: git holds a placeholder (see
+    // FIREBASE_SETUP.md), so this reads the file as text instead of naming
+    // its fields, and only checks a copy made by `flutterfire configure`.
+    final options = File('lib/firebase_options.dart').readAsStringSync();
+    final isPlaceholder = !options.contains('static const FirebaseOptions');
+    test(
+      'the generated options point at the bus tracker project',
+      () {
+        expect(options, contains("projectId: 'bus-tracker-162c0'"));
+        expect(options, contains('asia-southeast1'));
+      },
+      skip: isPlaceholder
+          ? 'lib/firebase_options.dart is the placeholder from git'
+          : false,
+    );
 
     test('reports failed, without throwing, for any other error', () async {
       final status = await initializeFirebase(
