@@ -8,6 +8,7 @@ import '../../../data/repositories/transport_network_repository.dart';
 import '../../home/application/nearest_stop.dart';
 import '../application/map_camera_controller.dart';
 import '../application/map_selection.dart';
+import '../application/my_location_mode.dart';
 import '../application/university_map_configuration_provider.dart';
 import 'map_legend.dart';
 
@@ -35,8 +36,34 @@ class _MapControlsState extends ConsumerState<MapControls> {
     return ref.read(mapCameraControllerProvider).showRoutes(routes);
   }
 
+  /// Whether the hint about turning with the phone has been given.
+  bool _compassHintGiven = false;
+
+  /// The location button, as in other map apps: the first tap finds the
+  /// passenger and follows them, the next turns the map with the phone,
+  /// the one after goes back to north-up.
   Future<void> _showMyLocation() async {
     if (_locating) return;
+    final mode = ref.read(myLocationModeProvider);
+    if (mode != MyLocationMode.free) {
+      // Already following: there is no need to find the position again.
+      final next = nextMyLocationMode(
+        mode,
+        hasCompassMode: ref.read(compassModeAvailableProvider),
+      );
+      if (next != mode) {
+        ref.read(myLocationModeProvider.notifier).set(next);
+        if (next == MyLocationMode.compass && !_compassHintGiven) {
+          _compassHintGiven = true;
+          _showMessage(
+            'The map now turns with your phone. If the direction looks '
+            'wrong, move the phone in a figure of eight.',
+          );
+        }
+        return;
+      }
+      // Nothing further to switch to: find the passenger afresh.
+    }
     setState(() => _locating = true);
 
     final service = ref.read(locationServiceProvider);
@@ -56,7 +83,14 @@ class _MapControlsState extends ConsumerState<MapControls> {
         ref
             .read(userPositionProvider.notifier)
             .set(position, ref.read(clockProvider)());
+        // The camera cannot follow a bus and the passenger at once.
+        if (ref.read(mapSelectionProvider).isFollowingBus) {
+          ref.read(mapSelectionProvider.notifier).setFollowingBus(false);
+        }
         await ref.read(mapCameraControllerProvider).showUserLocation(position);
+        if (!mounted) return;
+        // From here the map keeps up with the passenger by itself.
+        ref.read(myLocationModeProvider.notifier).set(MyLocationMode.following);
       case LocationUnavailable(:final problem, :final canFixInSettings):
         _showMessage(
           result.message,
@@ -79,6 +113,8 @@ class _MapControlsState extends ConsumerState<MapControls> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final locationMode = ref.watch(myLocationModeProvider);
+    final hasCompassMode = ref.watch(compassModeAvailableProvider);
     final divider = Container(
       width: 28,
       height: 1,
@@ -124,8 +160,20 @@ class _MapControlsState extends ConsumerState<MapControls> {
             ),
             divider,
             _MapButton(
-              tooltip: 'My location',
-              icon: Icons.my_location_rounded,
+              tooltip: switch (locationMode) {
+                MyLocationMode.free => 'My location',
+                MyLocationMode.following =>
+                  hasCompassMode
+                      ? 'Following you. Tap to turn the map with your phone'
+                      : 'Following you',
+                MyLocationMode.compass =>
+                  'Turning with your phone. Tap for north-up',
+              },
+              icon: locationMode == MyLocationMode.compass
+                  ? Icons.explore_rounded
+                  : Icons.my_location_rounded,
+              // Lit while the map is keeping up with the passenger.
+              active: locationMode != MyLocationMode.free,
               busy: _locating,
               onPressed: _showMyLocation,
             ),
@@ -142,12 +190,16 @@ class _MapButton extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     this.busy = false,
+    this.active = false,
   });
 
   final String tooltip;
   final IconData icon;
   final VoidCallback onPressed;
   final bool busy;
+
+  /// Whether what the button turns on is on now.
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +209,10 @@ class _MapButton extends StatelessWidget {
       tooltip: tooltip,
       onPressed: busy ? null : onPressed,
       constraints: const BoxConstraints.tightFor(width: 50, height: 50),
-      style: IconButton.styleFrom(shape: const RoundedRectangleBorder()),
+      style: IconButton.styleFrom(
+        shape: const RoundedRectangleBorder(),
+        backgroundColor: active ? scheme.primary.withValues(alpha: 0.16) : null,
+      ),
       icon: AnimatedSwitcher(
         duration: const Duration(milliseconds: 180),
         child: busy

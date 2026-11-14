@@ -328,6 +328,11 @@ class BusMapLayer {
     };
   }
 
+  /// How far right of, and above, a group's badge its count is drawn. On
+  /// a small badge it is kept far enough out not to cover the bus.
+  static double groupCountOffset(double pictureScale) =>
+      math.max(21 * pictureScale, pictureScale < 1 ? 12.0 : 21.0);
+
   /// A group's id on the map: its buses' ids, joined.
   static String groupId(List<String> busIds) => 'group:${busIds.join('|')}';
 
@@ -341,15 +346,34 @@ class BusMapLayer {
     'features': <Object>[],
   };
 
+  /// The radius of the badge as the map draws it, out to the edge of its
+  /// white rim, in the units the map's circles are measured in.
+  ///
+  /// [pictureScale] is how large the map draws a marker picture compared
+  /// with a circle of the same nominal size: 1 where both are measured in
+  /// logical pixels (the web), and one over the screen's pixel ratio on
+  /// Android, which draws a picture one image pixel per screen pixel but
+  /// measures circles in logical pixels. Anything drawn round the badge
+  /// with circles has to be sized by this, or on a phone it comes out
+  /// several times too big for the badge.
+  static double badgeEdgeRadius(double pictureScale) =>
+      (badgeRadiusPixels + 5) * markerScale * pictureScale;
+
+  /// How wide the route-coloured ring round a badge is drawn.
+  static const double routeRingWidth = 3;
+
   /// Adds the images, the source and the layers. Call after every style
   /// load. [badges] and [pointers] come from [paintBusBadge] and
-  /// [paintBusPointer].
+  /// [paintBusPointer]. For [pictureScale] see [badgeEdgeRadius].
   Future<void> attach(
     MapLibreMapController map,
     BusMarkerColors colors, {
     required Map<BusTrackingStatus, Uint8List> badges,
     required Map<BusTrackingStatus, Uint8List> pointers,
+    double pictureScale = 1,
   }) async {
+    // Whether the badge is drawn smaller than its nominal size (a phone).
+    final small = pictureScale < 1;
     for (final MapEntry(key: status, value: bytes) in badges.entries) {
       await map.addImage(badgeName(status), bytes);
     }
@@ -401,15 +425,19 @@ class BusMapLayer {
       filter: const ['has', 'heading'],
       enableInteraction: false,
     );
-    // A ring in the colour of the bus's route, showing just outside the
-    // badge's white rim.
+    // A ring in the colour of the bus's route, just outside the badge's
+    // white rim. It is an outline with nothing filled in: a filled disc
+    // would show as a solid circle wherever it is larger than the badge.
     await map.addCircleLayer(
       source,
       routeRingLayer,
-      const CircleLayerProperties(
-        circleRadius: (badgeRadiusPixels + 5) * markerScale + 3.5,
-        circleColor: ['get', 'routeColor'],
-        circleOpacity: ['get', 'opacity'],
+      CircleLayerProperties(
+        circleRadius: badgeEdgeRadius(pictureScale),
+        circleColor: const ['get', 'routeColor'],
+        circleOpacity: 0,
+        circleStrokeColor: const ['get', 'routeColor'],
+        circleStrokeWidth: routeRingWidth,
+        circleStrokeOpacity: const ['get', 'opacity'],
       ),
       filter: const ['has', 'routeColor'],
       enableInteraction: false,
@@ -478,12 +506,14 @@ class BusMapLayer {
     await map.addCircleLayer(
       groupSource,
       groupBackLayer,
+      // The badge behind is the size of the one in front, wherever the
+      // map draws that smaller than its nominal size.
       CircleLayerProperties(
-        circleRadius: badgeRadiusPixels * markerScale,
+        circleRadius: badgeRadiusPixels * markerScale * pictureScale,
         circleColor: const ['get', 'color'],
         circleStrokeColor: '#ffffff',
-        circleStrokeWidth: 3.5,
-        circleTranslate: const [7, -6],
+        circleStrokeWidth: small ? 1.5 : 3.5,
+        circleTranslate: [7 * pictureScale, -6 * pictureScale],
       ),
       enableInteraction: false,
     );
@@ -502,12 +532,17 @@ class BusMapLayer {
     await map.addCircleLayer(
       groupSource,
       groupBubbleLayer,
+      // The count sits on the badge's shoulder. It stays large enough to
+      // read even where the badge is drawn small.
       CircleLayerProperties(
-        circleRadius: 11.5,
+        circleRadius: small ? 9 : 11.5,
         circleColor: colors.label,
         circleStrokeColor: colors.outline,
-        circleStrokeWidth: 2,
-        circleTranslate: const [21, -21],
+        circleStrokeWidth: small ? 1.5 : 2,
+        circleTranslate: [
+          groupCountOffset(pictureScale),
+          -groupCountOffset(pictureScale),
+        ],
       ),
       enableInteraction: false,
     );
@@ -517,9 +552,12 @@ class BusMapLayer {
       SymbolLayerProperties(
         textField: const ['get', 'count'],
         textFont: const ['NotoSans-Medium'],
-        textSize: 13,
+        textSize: small ? 11.5 : 13,
         textColor: colors.labelHalo,
-        textTranslate: const [21, -21],
+        textTranslate: [
+          groupCountOffset(pictureScale),
+          -groupCountOffset(pictureScale),
+        ],
         textAllowOverlap: true,
         textIgnorePlacement: true,
       ),

@@ -1,6 +1,8 @@
 import 'package:bu_bus_tracker/core/services/location_service.dart';
 import 'package:bu_bus_tracker/data/models/geo_point.dart';
 import 'package:bu_bus_tracker/features/map/application/map_camera_controller.dart';
+import 'package:bu_bus_tracker/features/map/application/map_selection.dart';
+import 'package:bu_bus_tracker/features/map/application/my_location_mode.dart';
 import 'package:bu_bus_tracker/features/map/domain/offline_map_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -135,6 +137,90 @@ void main() {
 
       expect(container.read(userLocationVisibleProvider), isTrue);
       expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('the button follows, then turns with the phone, then back', (
+      tester,
+    ) async {
+      final container = await pumpApp(
+        tester,
+        locationService: FakeLocationService(
+          const LocationFound(GeoPoint(22.6601, 90.3630), accuracyMeters: 8),
+        ),
+      );
+      MyLocationMode mode() => container.read(myLocationModeProvider);
+      expect(mode(), MyLocationMode.free);
+
+      // The first tap finds the passenger and keeps up with them.
+      await tester.tap(find.byTooltip('My location'));
+      await tester.pumpAndSettle();
+      expect(mode(), MyLocationMode.following);
+
+      // The next turns the map with the phone, and says so once.
+      await tester.tap(find.byTooltip(RegExp('^Following you')));
+      await tester.pumpAndSettle();
+      expect(mode(), MyLocationMode.compass);
+      expect(find.byIcon(Icons.explore_rounded), findsOneWidget);
+      expect(
+        find.textContaining('The map now turns with your phone'),
+        findsOneWidget,
+      );
+
+      // The one after goes back to north-up.
+      await tester.tap(find.byTooltip(RegExp('^Turning with your phone')));
+      await tester.pumpAndSettle();
+      expect(mode(), MyLocationMode.following);
+      expect(find.byIcon(Icons.explore_rounded), findsNothing);
+    });
+
+    testWidgets('following a bus lets go of the passenger, and the reverse', (
+      tester,
+    ) async {
+      // Wide, so the bus's panel is beside the map buttons, not over them.
+      await tester.binding.setSurfaceSize(const Size(1280, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final container = await pumpApp(
+        tester,
+        locationService: FakeLocationService(
+          const LocationFound(GeoPoint(22.6601, 90.3630), accuracyMeters: 8),
+        ),
+      );
+      await tester.tap(find.byTooltip('My location'));
+      await tester.pumpAndSettle();
+      expect(container.read(myLocationModeProvider), MyLocationMode.following);
+
+      final selection = container.read(mapSelectionProvider.notifier)
+        ..selectBus('bus')
+        ..setFollowingBus(true);
+      await tester.pumpAndSettle();
+      expect(container.read(myLocationModeProvider), MyLocationMode.free);
+
+      // Asking for one's own position stops following the bus.
+      await tester.tap(find.byTooltip('My location'));
+      await tester.pumpAndSettle();
+      expect(container.read(mapSelectionProvider).isFollowingBus, isFalse);
+      expect(container.read(mapSelectionProvider).busId, 'bus');
+      expect(container.read(myLocationModeProvider), MyLocationMode.following);
+      selection.clear();
+    });
+
+    test('where the map cannot turn with the phone, it only follows', () {
+      expect(
+        nextMyLocationMode(MyLocationMode.free, hasCompassMode: false),
+        MyLocationMode.following,
+      );
+      expect(
+        nextMyLocationMode(MyLocationMode.following, hasCompassMode: false),
+        MyLocationMode.following,
+      );
+      expect(
+        nextMyLocationMode(MyLocationMode.following, hasCompassMode: true),
+        MyLocationMode.compass,
+      );
+      expect(
+        nextMyLocationMode(MyLocationMode.compass, hasCompassMode: true),
+        MyLocationMode.following,
+      );
     });
 
     testWidgets('explains when the position is outside the map area', (

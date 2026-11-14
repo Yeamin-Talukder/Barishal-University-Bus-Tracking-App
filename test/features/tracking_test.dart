@@ -847,6 +847,18 @@ void main() {
       expect(busBadgeInk(const Color(0xFF7FE0B0)), const Color(0xFF0F1318));
     });
 
+    test('what is drawn round the badge is sized to the badge', () {
+      // On the web a picture and a circle are measured alike.
+      expect(BusMapLayer.badgeEdgeRadius(1), closeTo(25.9, 0.01));
+      // A phone draws the picture one image pixel per screen pixel, so on
+      // a screen three times as dense the badge is a third the size, and
+      // the ring round it must be too.
+      expect(BusMapLayer.badgeEdgeRadius(1 / 3), closeTo(8.63, 0.01));
+      // A group's count keeps clear of a small badge.
+      expect(BusMapLayer.groupCountOffset(1), 21);
+      expect(BusMapLayer.groupCountOffset(1 / 3), 12);
+    });
+
     test('the selected bus is marked', () {
       final geoJson = BusMapLayer.geoJson(
         [TrackedBus(bus: _chitra, location: here)],

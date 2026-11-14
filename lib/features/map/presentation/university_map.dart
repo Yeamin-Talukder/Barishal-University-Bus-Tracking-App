@@ -24,6 +24,7 @@ import '../application/bus_grouping.dart';
 import '../application/bus_map_layer.dart';
 import '../application/bus_motion.dart';
 import '../application/map_view_state.dart';
+import '../application/my_location_mode.dart';
 import '../application/route_flow_layer.dart';
 import '../../prediction/application/prediction_providers.dart';
 import '../application/predicted_bus_layer.dart';
@@ -155,6 +156,130 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     _map = map;
     _camera.attach(map);
   }
+
+  // --- The passenger's own position ------------------------------------
+
+  /// How the map itself is following the passenger. It trails
+  /// [myLocationModeProvider] while a change of mode is being carried out.
+  MyLocationTrackingMode _tracking = MyLocationTrackingMode.none;
+
+  /// Set while this widget is changing the mode itself, so that the map's
+  /// own report of it ("no longer following") is not taken for the
+  /// passenger having moved the map.
+  bool _changingMyLocationMode = false;
+
+  /// How far the camera leans forward while the map turns with the phone.
+  static const double _compassTilt = 45;
+
+  /// Carries out a change of [MyLocationMode] on the map.
+  Future<void> _onMyLocationModeChanged(
+    MyLocationMode? previous,
+    MyLocationMode next,
+  ) async {
+    if (!mounted) return;
+    final map = _map;
+    switch (next) {
+      case MyLocationMode.free:
+        if (_tracking != MyLocationTrackingMode.none) {
+          setState(() => _tracking = MyLocationTrackingMode.none);
+        }
+      case MyLocationMode.following:
+        // Back from turning with the phone: face north and stand the
+        // camera up again. Moving the camera ends the map's own following,
+        // so that is switched off first and on again afterwards.
+        if (previous == MyLocationMode.compass && map != null) {
+          _changingMyLocationMode = true;
+          try {
+            setState(() => _tracking = MyLocationTrackingMode.none);
+            final user = ref.read(userPositionProvider)?.position;
+            final camera = map.cameraPosition;
+            if (user != null) {
+              await map.animateCamera(
+                CameraUpdate.newCameraPosition(
+                  CameraPosition(
+                    target: LatLng(user.latitude, user.longitude),
+                    zoom: camera?.zoom ?? 16,
+                  ),
+                ),
+                duration: const Duration(milliseconds: 500),
+              );
+            }
+          } catch (error) {
+            debugPrint('Could not turn the map back to north: $error');
+          } finally {
+            _changingMyLocationMode = false;
+          }
+          // The passenger may have let go of following meanwhile.
+          if (!mounted ||
+              ref.read(myLocationModeProvider) != MyLocationMode.following) {
+            return;
+          }
+        }
+        setState(() => _tracking = MyLocationTrackingMode.tracking);
+      case MyLocationMode.compass:
+        setState(() => _tracking = MyLocationTrackingMode.trackingCompass);
+        // Lean forward, as map apps do when they turn with the phone. The
+        // map refuses while it is still changing mode: try again shortly.
+        for (var attempt = 0; attempt < 3; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 350));
+          if (!mounted ||
+              ref.read(myLocationModeProvider) != MyLocationMode.compass) {
+            return;
+          }
+          try {
+            final leaned = await _map?.setTrackingCameraOptions(
+              tilt: _compassTilt,
+              duration: const Duration(milliseconds: 500),
+            );
+            if (leaned ?? true) return;
+          } catch (error) {
+            debugPrint('Could not lean the camera: $error');
+          }
+        }
+    }
+  }
+
+  /// The map stopped following the passenger: they moved it themselves,
+  /// or it was sent to look at something else.
+  void _onMyLocationTrackingEnded() {
+    if (_changingMyLocationMode || !mounted) return;
+    if (ref.read(myLocationModeProvider) != MyLocationMode.free) {
+      ref.read(myLocationModeProvider.notifier).set(MyLocationMode.free);
+    }
+  }
+
+  /// A new position from the phone's location sensors while the dot is
+  /// shown. It is kept for the nearest stops and the walking times, so
+  /// they stay right as the passenger walks. It never leaves the device.
+  void _onUserLocationUpdated(UserLocation location) {
+    final position = GeoPoint(
+      location.position.latitude,
+      location.position.longitude,
+    );
+    final config = ref.read(universityMapConfigurationProvider);
+    if (!config.isWithinCoverage(position.latitude, position.longitude)) {
+      return;
+    }
+    final now = ref.read(clockProvider)();
+    final last = ref.read(userPositionProvider);
+    if (last != null) {
+      final moved = haversineDistanceMeters(
+        last.position.latitude,
+        last.position.longitude,
+        position.latitude,
+        position.longitude,
+      );
+      // Not on every reading: the lists that depend on it are redrawn.
+      if (moved < _userMoveWorthNoting &&
+          now.difference(last.at) < _userPositionKeptFor) {
+        return;
+      }
+    }
+    ref.read(userPositionProvider.notifier).set(position, now);
+  }
+
+  static const double _userMoveWorthNoting = 10;
+  static const Duration _userPositionKeptFor = Duration(seconds: 20);
 
   void _forgetMap() {
     final map = _map;
@@ -294,6 +419,7 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
         _busColors(),
         badges: badges,
         pointers: pointers,
+        pictureScale: _pictureScale(),
       );
       _busLayerAttached = true;
       _groupsDrawn = '';
@@ -1046,6 +1172,16 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     }
   }
 
+  /// How large the map draws a marker picture compared with a circle of
+  /// the same nominal size. Android draws a picture one image pixel per
+  /// screen pixel and measures circles in logical pixels; elsewhere both
+  /// are in logical pixels.
+  double _pictureScale() {
+    final isAndroid =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    return isAndroid ? 1 / MediaQuery.devicePixelRatioOf(context) : 1;
+  }
+
   /// The square around a tap in which a bus or stop still counts as hit:
   /// about a fingertip. Android reports taps in screen pixels, the other
   /// platforms in logical ones.
@@ -1134,6 +1270,9 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     ref.listen(trackedBusesProvider, (previous, next) {
       unawaited(_onBusesChanged());
     });
+    ref.listen(myLocationModeProvider, (previous, next) {
+      unawaited(_onMyLocationModeChanged(previous, next));
+    });
     ref.listen(mapSelectionProvider, (previous, next) {
       unawaited(_onSelectionChanged(next));
       // Which line is on the middle of the road has changed.
@@ -1188,6 +1327,7 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
     }
 
     final bounds = config.coverageBounds;
+    final showsMyLocation = ref.watch(userLocationVisibleProvider);
     return Listener(
       onPointerDown: (event) => _pointerDownAt = event.position,
       onPointerMove: _onPointerMove,
@@ -1213,7 +1353,24 @@ class _UniversityMapState extends ConsumerState<UniversityMap>
             northeast: LatLng(bounds.north, bounds.east),
           ),
         ),
-        myLocationEnabled: ref.watch(userLocationVisibleProvider),
+        myLocationEnabled: showsMyLocation,
+        // Follow the passenger, and turn with the phone, when asked to.
+        myLocationTrackingMode: showsMyLocation
+            ? _tracking
+            : MyLocationTrackingMode.none,
+        // An arrow on the dot for the way the phone is facing, from its
+        // compass. The accuracy circle round the dot is drawn by the map.
+        myLocationRenderMode:
+            showsMyLocation && ref.watch(compassModeAvailableProvider)
+            ? MyLocationRenderMode.compass
+            : MyLocationRenderMode.normal,
+        onUserLocationUpdated: _onUserLocationUpdated,
+        onCameraTrackingDismissed: _onMyLocationTrackingEnded,
+        onCameraTrackingChanged: (mode) {
+          if (mode == MyLocationTrackingMode.none) {
+            _onMyLocationTrackingEnded();
+          }
+        },
         // Attribution is shown by the app's own label so it stays visible
         // above the bottom sheet.
         attributionEnabled: false,
