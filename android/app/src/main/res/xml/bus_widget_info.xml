@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Home-screen widget: resizable from 2x2 (small) to wider (medium). -->
+<!-- Home-screen widget: resizable from 2x2 (small) to wider (medium).
+     Each widget has its own settings: Android 12+ places it straight away
+     and offers Settings on long-press; older versions ask when it is added. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="bd.ac.bu.bu_bus_tracker.WidgetConfigActivity"
     android:description="@string/widget_description"
     android:initialLayout="@layout/widget_bus_medium"
     android:minWidth="110dp"
@@ -12,4 +15,5 @@
     android:previewLayout="@layout/widget_bus_medium"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional" />

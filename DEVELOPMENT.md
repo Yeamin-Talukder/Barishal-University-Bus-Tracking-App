@@ -1142,6 +1142,46 @@ and a red route running under the pin's tip.
   not bundled into the app.
 - The web build still has Flutter's default icons (not requested).
 
+## Home-screen widget, second round (14 November 2026)
+
+Four changes to the widget below.
+
+- **Bus names first.** Every departure, in every size, leads with the
+  timetable's bus names ("Chitra"), then the route and where it goes. The
+  small widget showed no names before; the medium one only on the first
+  bus, after the starting place. "Route 02" stands in when the timetable
+  names no bus.
+- **Each widget has its own choice.** Who for, route and direction are
+  kept per widget in native preferences (`bus_widget`, `choice.<id>`),
+  removed when the widget is removed. A new widget starts with the choice
+  set up in Profile; widgets placed before this change took over the one
+  choice they all shared. Ways to change one widget:
+  - long-press it → Settings (Android 12+; `reconfigurable`), or when it
+    is added (Android 11 and older ask for settings then);
+  - tap its title;
+  - Profile → Home-screen widget → On your home screen → Change.
+  The settings screen is `WidgetConfigActivity.kt` running the Dart entry
+  point `widgetConfigMain` (`main.dart`): a small app of its own, without
+  Firebase or the map, reading the timetable the app saved.
+- **The end of the day.** The subtitle gives the last bus while there are
+  several left ("To campus · last bus 5:30 PM"); the card's label says
+  "Last bus today" for the only one left and "No more buses today" once
+  they are over, then shows tomorrow's first. Tomorrow's first buses fill
+  the list when today's run short. The small widget tags "Last today" and
+  "No more today".
+- **Tap a bus to open it.** The card, each row and each small-widget slide
+  open the app on that route, shown the way that bus goes, where "Which
+  bus goes this way" lists it. Not a live bus: a timetable departure has no
+  bus position to follow.
+- **Data:** the app now writes the whole timetable once
+  (`widget.timetable`, version 2: groups, every departure with its
+  group, route, colour, ends, time, buses and direction, live buses per
+  route); each widget filters it natively. The old single-choice
+  `widget.data` is removed on the next write.
+- **Checked:** 13 widget tests (names, per-choice filtering, saved
+  timetable round trip, the day's last bus and after it, live counts by
+  route, tapped departures); 605 tests pass; analyze clean.
+
 ## Map features and bus names (12 November 2026)
 
 What the map page gained, and where the buses' names are now shown.
@@ -1179,6 +1219,15 @@ What the map page gained, and where the buses' names are now shown.
   A bus that is not live is fainter and says "seen 4 min ago". The picked
   bus is marked by an outline that breathes: there is no filled circle
   behind it any more, only the animation.
+  - **The route ring on a phone (14 November).** The ring was a filled
+    disc under the badge. Android draws a marker picture one image pixel
+    per screen pixel but measures circles in logical pixels, so on a phone
+    the disc was about three times the badge and showed as a solid circle
+    in the route's colour. It is now an outline with nothing filled in,
+    sized to the badge as the map draws it (`BusMapLayer.badgeEdgeRadius`,
+    `pictureScale`); a group's second badge and count are sized the same
+    way. Seen right in the web build; **not yet seen on a phone**. The
+    badge itself is still much smaller on a phone than on the web.
 - **Route lines.** Each route has its own pattern down the middle (plain,
   dashes, dots) so they can be told apart without colour. A picked route
   shows arrows the way it is listed and its name along the line. For a
@@ -1208,7 +1257,7 @@ What the map page gained, and where the buses' names are now shown.
   - Picking a bus from the "buses here" list left a second list open: the
     tap also reached the map under the list and landed on the group's
     label. The list is shielded from the map and that echo is ignored.
-- **Checked:** 597 tests pass (11 new for the bus names, others for the
+- **Checked:** 598 tests pass (11 new for the bus names, others for the
   markers, routes, following, nearest stops, alert and wide layout);
   analyze clean. Seen working in the web build at phone and wide sizes
   with the pretend buses: groups and the list, the picked bus's ring,
@@ -1216,6 +1265,46 @@ What the map page gained, and where the buses' names are now shown.
   nearest stops (with a pretend position).
 - **Not checked:** on an Android phone. The pause-on-drag and the list fix
   matter on the web; Android reports a hand-made move itself.
+
+## The phone's sensors on the map (14 November 2026)
+
+The passenger's own dot now uses the phone's sensors the way other map
+apps do. Until now only a single position was read when the button was
+pressed.
+
+- **Which way you are facing.** On the phone the dot has an arrow for the
+  way the phone points, from its compass steadied by its motion sensors
+  (`MyLocationRenderMode.compass`), and the circle of uncertainty round the
+  dot that the map draws from the position's accuracy. No new package and
+  no new permission: this is the map's own location component.
+- **The location button has three states**, as in other map apps:
+  1. *First tap:* finds you, moves there, and then keeps you in the middle
+     as you walk (the button is lit).
+  2. *Second tap:* the map turns with the phone and leans forward, so what
+     is in front of you is at the top (compass icon). A hint is shown once:
+     move the phone in a figure of eight if the direction looks wrong.
+  3. *Third tap:* back to north-up, still following.
+  Moving the map by hand, or sending it to a stop, route or bus, lets go
+  (button no longer lit).
+- **Following a bus and following yourself exclude each other:** starting
+  one stops the other. The bus stays picked.
+- **Nearest stops keep up as you walk.** While the dot is shown, each new
+  position from the phone updates the nearest stops and walking times (at
+  most every 10 m or 20 s). The position still never leaves the device.
+- **Web:** follows you, but cannot turn with the device or draw the facing
+  arrow (the web map has no compass); the second tap finds you again.
+- **Code:** `map/application/my_location_mode.dart` (the modes and what
+  the next tap does), `university_map.dart` (tracking and render modes,
+  position updates), `map_controls.dart` (the button).
+- **Checked:** 608 tests pass (three new: the button's three states,
+  bus-following against self-following, the web's two states); analyze
+  clean. In the web build with a pretend position: the dot, the lit button,
+  and letting go after a drag.
+- **Not checked:** on a phone. The facing arrow, turning with the phone,
+  the lean and the accuracy circle only exist there, so they have not been
+  seen working yet. A phone without a compass will follow but not turn.
+- **Not done:** the driver's phone still reports GPS only; its motion
+  sensors are not used to steady the bus's position.
 
 ## Home-screen widget (12 November 2026)
 
@@ -1371,7 +1460,7 @@ layout was repaired.
 | Check | Result |
 |---|---|
 | `flutter analyze` | No issues |
-| `flutter test` | 597 tests pass |
+| `flutter test` | 608 tests pass |
 | Live tracking, passenger side | Checked in the web preview against the local emulators with a test position: the bus list showed "1 bus live", and a green marker with the bus number appeared on the map and moved when the position changed |
 | Driver mode | App tests and rule tests only. **Not run on a phone: no real trip, no background check, no real GPS** |
 | Tracking rules on the live project | Deployed. Without signing in, positions and trips can be read and nothing can be written; `admins` and `busDrivers` cannot be read |

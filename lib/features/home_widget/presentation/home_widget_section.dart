@@ -1,21 +1,16 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../data/repositories/transport_network_repository.dart';
-import '../../../shared/widgets/route_color.dart';
 import '../../../shared/widgets/section_card.dart';
-import '../../schedule/data/bus_schedule_repository.dart';
-import '../../schedule/domain/bus_schedule.dart';
 import '../application/home_widget_sync.dart';
 import '../domain/widget_snapshot.dart';
+import 'widget_choice_editor.dart';
 
-/// Profile → "Home-screen widget": what the widget shows, a live preview of
-/// it, and a button that puts it on the home screen.
+/// Profile → "Home-screen widget": the widgets already on the home screen,
+/// each with its own choice that can be changed here, and a new widget to
+/// set up and add.
 class HomeWidgetSection extends ConsumerStatefulWidget {
   const HomeWidgetSection({super.key});
 
@@ -23,63 +18,72 @@ class HomeWidgetSection extends ConsumerStatefulWidget {
   ConsumerState<HomeWidgetSection> createState() => _HomeWidgetSectionState();
 }
 
-class _HomeWidgetSectionState extends ConsumerState<HomeWidgetSection> with WidgetsBindingObserver {
-  int _placed = 0;
-  Timer? _tick;
+class _HomeWidgetSectionState extends ConsumerState<HomeWidgetSection>
+    with WidgetsBindingObserver {
+  List<PlacedWidget> _placed = const [];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _count();
-    // The preview's countdown moves on each minute.
-    _tick = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() {});
-    });
+    _load();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _tick?.cancel();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Back from the home screen after adding the widget.
-    if (state == AppLifecycleState.resumed) _count();
+    // Back from the home screen after adding or changing a widget.
+    if (state == AppLifecycleState.resumed) _load();
   }
 
-  Future<void> _count() async {
-    final n = await ref.read(homeWidgetBridgeProvider)?.count() ?? 0;
-    if (mounted) setState(() => _placed = n);
+  Future<void> _load() async {
+    final placed = await ref.read(homeWidgetBridgeProvider)?.placed() ?? [];
+    if (mounted) setState(() => _placed = placed);
   }
 
   Future<void> _pin() async {
     final ok = await ref.read(homeWidgetBridgeProvider)?.pin() ?? false;
     if (!mounted) return;
     if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Long-press your home screen, tap Widgets, and find BU Bus Tracker.'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Long-press your home screen, tap Widgets, and find BU Bus Tracker.',
+          ),
+        ),
+      );
     }
+  }
+
+  Future<void> _change(PlacedWidget placed, WidgetTimetable timetable) async {
+    final chosen = await showModalBottomSheet<WidgetChoice>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (context) =>
+          _ChangeSheet(timetable: timetable, initial: placed.choice),
+    );
+    if (chosen == null || chosen == placed.choice) return;
+    await ref.read(homeWidgetBridgeProvider)?.setChoice(placed.id, chosen);
+    await _load();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (ref.watch(homeWidgetBridgeProvider) == null) return const SizedBox.shrink();
+    if (ref.watch(homeWidgetBridgeProvider) == null) {
+      return const SizedBox.shrink();
+    }
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final choice = ref.watch(widgetChoiceProvider);
-    final controller = ref.read(widgetChoiceProvider.notifier);
-    final schedule = ref.watch(busScheduleProvider).value;
-    final routes = ref.watch(transportNetworkProvider).value?.routes ?? const [];
-    final routeNumbers = [
-      for (final t in schedule?.timetablesFor(choice.groupId) ?? const <RouteTimetable>[]) t.routeNumber,
-    ];
-    final departures = schedule == null
-        ? const <WidgetDeparture>[]
-        : widgetDepartures(schedule, choice, routeColors: routeColorsOf(routes));
+    final timetable =
+        ref.watch(widgetTimetableProvider) ?? WidgetTimetable.empty;
 
     return SectionCard(
       title: 'Home-screen widget',
@@ -90,83 +94,83 @@ class _HomeWidgetSectionState extends ConsumerState<HomeWidgetSection> with Widg
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'See your next bus on the home screen, with a live countdown, without opening the app.',
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                'Your next bus on the home screen, with its name, a live '
+                'countdown and the last bus of the day. Each widget can '
+                'show different buses.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
-              const SizedBox(height: AppSpacing.lg),
-              _WidgetPreview(title: widgetTitle(choice), subtitle: choice.direction.label, departures: departures),
-              const SizedBox(height: AppSpacing.lg),
-              _Label('Who for'),
-              SegmentedButton<String>(
-                segments: [
-                  for (final g in BusSchedule.standardGroups)
-                    ButtonSegment(value: g.id, label: Text(g.name), icon: Icon(_groupIcon(g.id))),
-                ],
-                selected: {choice.groupId},
-                showSelectedIcon: false,
-                onSelectionChanged: (s) =>
-                    controller.set(choice.copyWith(groupId: s.first, route: WidgetChoice.allRoutes)),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _Label('Route'),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  ChoiceChip(
-                    label: const Text('All routes'),
-                    selected: choice.route == WidgetChoice.allRoutes,
-                    onSelected: (_) => controller.set(choice.copyWith(route: WidgetChoice.allRoutes)),
+              if (_placed.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  'On your home screen',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                  for (final r in routeNumbers)
-                    ChoiceChip(
-                      avatar: _Dot(color: _colorFor(r, routes, routeNumbers)),
-                      label: Text('Route $r'),
-                      selected: choice.route == r,
-                      onSelected: (_) => controller.set(choice.copyWith(route: r)),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                for (final (index, placed) in _placed.indexed)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: _PlacedTile(
+                      number: index + 1,
+                      title: timetable.titleFor(placed.choice),
+                      subtitle: placed.choice.direction.label,
+                      onChange: () => _change(placed, timetable),
                     ),
-                ],
+                  ),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.touch_app_rounded,
+                      size: 16,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'You can also change a widget by tapping its title, '
+                        'or long-pressing it and choosing Settings.',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                const Divider(height: 1),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                _placed.isEmpty ? 'Set up your widget' : 'Add another widget',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
-              _Label('Direction'),
-              SegmentedButton<WidgetDirection>(
-                segments: const [
-                  ButtonSegment(value: WidgetDirection.both, label: Text('Both'), icon: Icon(Icons.swap_horiz_rounded)),
-                  ButtonSegment(value: WidgetDirection.toUniversity, label: Text('To campus'), icon: Icon(Icons.school_rounded)),
-                  ButtonSegment(value: WidgetDirection.fromUniversity, label: Text('From campus'), icon: Icon(Icons.home_rounded)),
-                ],
-                selected: {choice.direction},
-                showSelectedIcon: false,
-                onSelectionChanged: (s) => controller.set(choice.copyWith(direction: s.first)),
+              WidgetChoiceEditor(
+                timetable: timetable,
+                choice: choice,
+                onChanged: ref.read(widgetChoiceProvider.notifier).set,
               ),
               const SizedBox(height: AppSpacing.lg),
               SizedBox(
                 height: 50,
                 child: FilledButton.icon(
                   onPressed: _pin,
-                  icon: Icon(_placed > 0 ? Icons.add_to_home_screen_rounded : Icons.widgets_rounded),
-                  label: Text(_placed > 0 ? 'Add another to home screen' : 'Add to home screen'),
+                  icon: Icon(
+                    _placed.isEmpty
+                        ? Icons.widgets_rounded
+                        : Icons.add_to_home_screen_rounded,
+                  ),
+                  label: Text(
+                    _placed.isEmpty
+                        ? 'Add to home screen'
+                        : 'Add another to home screen',
+                  ),
                 ),
-              ),
-              AnimatedSwitcher(
-                duration: AppMotion.quick,
-                child: _placed > 0
-                    ? Padding(
-                        key: const ValueKey('placed'),
-                        padding: const EdgeInsets.only(top: AppSpacing.sm),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.check_circle_rounded, size: 16, color: theme.accent),
-                            const SizedBox(width: 6),
-                            Text(
-                              _placed == 1 ? 'On your home screen. Changes here update it.' : '$_placed on your home screen.',
-                              style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                            ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(key: ValueKey('none')),
               ),
             ],
           ),
@@ -174,199 +178,127 @@ class _HomeWidgetSectionState extends ConsumerState<HomeWidgetSection> with Widg
       ],
     );
   }
-
-  static IconData _groupIcon(String id) => switch (id) {
-        'teacher' => Icons.co_present_rounded,
-        'staff' => Icons.badge_rounded,
-        _ => Icons.school_rounded,
-      };
-
-  static Color _colorFor(String route, List<dynamic> routes, List<String> numbers) {
-    for (final r in routes) {
-      if (r.id == route) return routeColor(r.colorHex as String);
-    }
-    const palette = ['#F2994A', '#6FA8FF', '#B79CFF', '#FF8FA3', '#E6C24C', '#4FC3F7'];
-    return routeColor(palette[numbers.indexOf(route).clamp(0, 99) % palette.length]);
-  }
 }
 
-class _Label extends StatelessWidget {
-  const _Label(this.text);
-  final String text;
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: Text(text, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
-      );
-}
+class _PlacedTile extends StatelessWidget {
+  const _PlacedTile({
+    required this.number,
+    required this.title,
+    required this.subtitle,
+    required this.onChange,
+  });
 
-class _Dot extends StatelessWidget {
-  const _Dot({required this.color});
-  final Color color;
-  @override
-  Widget build(BuildContext context) =>
-      Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
-}
-
-/// A drawing of the medium widget with the real next departures, so the
-/// choice can be seen before the widget is placed.
-class _WidgetPreview extends StatelessWidget {
-  const _WidgetPreview({required this.title, required this.subtitle, required this.departures});
+  final int number;
   final String title;
   final String subtitle;
-  final List<WidgetDeparture> departures;
+  final VoidCallback onChange;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final now = TimeOfDay.now();
-    final nowMinutes = now.hour * 60 + now.minute;
-    final today = departures.where((d) => d.minutes >= nowMinutes).toList();
-    final tomorrow = today.isEmpty;
-    final upcoming = tomorrow ? departures : today;
-
-    String time(int m) => MaterialLocalizations.of(context).formatTimeOfDay(
-          TimeOfDay(hour: m ~/ 60, minute: m % 60),
-          alwaysUse24HourFormat: MediaQuery.of(context).alwaysUse24HourFormat,
-        );
-    String left(int m) {
-      if (tomorrow) return 'Tomorrow';
-      final diff = m - nowMinutes;
-      if (diff < 1) return 'Now';
-      if (diff < 60) return 'in $diff min';
-      return 'in ${diff ~/ 60} h ${diff % 60} min';
-    }
-
-    return AnimatedSwitcher(
-      duration: AppMotion.standard,
-      switchInCurve: AppMotion.enter,
-      transitionBuilder: (child, a) => FadeTransition(
-        opacity: a,
-        child: ScaleTransition(scale: Tween(begin: 0.97, end: 1.0).animate(a), child: child),
-      ),
-      child: Container(
-        key: ValueKey('$title$subtitle${upcoming.length}${upcoming.firstOrNull?.minutes}'),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(AppRadius.xl),
-          border: Border.all(color: scheme.outlineVariant),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 18, offset: const Offset(0, 8))],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.directions_bus_rounded, size: 20, color: theme.accent),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
-                      Text(subtitle, style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
-                    ],
-                  ),
-                ),
-                Icon(Icons.refresh_rounded, size: 18, color: scheme.onSurfaceVariant),
-              ],
-            ),
-            const SizedBox(height: 10),
-            if (upcoming.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                child: Text(
-                  'No buses in the timetable for this choice.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-                ),
-              )
-            else ...[
+    return Material(
+      color: scheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: onChange,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
+          child: Row(
+            children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  color: theme.accent.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                child: Row(
+                child: Icon(
+                  Icons.widgets_rounded,
+                  size: 18,
+                  color: theme.accent,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _RouteChip(route: upcoming.first.route, color: routeColor(upcoming.first.colorHex)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('To ${upcoming.first.to}',
-                              maxLines: 1, overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
-                          Text('From ${upcoming.first.from} · ${upcoming.first.vehicles}',
-                              maxLines: 1, overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
-                        ],
+                    Text(
+                      'Widget $number · $title',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(time(upcoming.first.minutes),
-                            style: theme.textTheme.titleLarge?.copyWith(color: theme.accent, fontWeight: FontWeight.w800)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: theme.accent.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: Text(left(upcoming.first.minutes),
-                              style: theme.textTheme.labelSmall?.copyWith(color: theme.accent, fontWeight: FontWeight.w800)),
-                        ),
-                      ],
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 6),
-              for (final d in upcoming.skip(1).take(2))
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-                  child: Row(
-                    children: [
-                      _Dot(color: routeColor(d.colorHex)),
-                      const SizedBox(width: 6),
-                      SizedBox(width: 26, child: Text(d.route, style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800))),
-                      Expanded(
-                        child: Text('To ${d.to}', maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall),
-                      ),
-                      Text(time(d.minutes),
-                          style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w700)),
-                    ],
-                  ),
-                ),
+              TextButton(onPressed: onChange, child: const Text('Change')),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _RouteChip extends StatelessWidget {
-  const _RouteChip({required this.route, required this.color});
-  final String route;
-  final Color color;
+/// Changes what one placed widget shows.
+class _ChangeSheet extends StatefulWidget {
+  const _ChangeSheet({required this.timetable, required this.initial});
+  final WidgetTimetable timetable;
+  final WidgetChoice initial;
+
+  @override
+  State<_ChangeSheet> createState() => _ChangeSheetState();
+}
+
+class _ChangeSheetState extends State<_ChangeSheet> {
+  late WidgetChoice _choice = widget.initial;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(8, 4, 9, 4),
-      decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(99)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _Dot(color: color),
-          const SizedBox(width: 5),
-          Text(route, style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            'Change widget',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          WidgetChoiceEditor(
+            timetable: widget.timetable,
+            choice: _choice,
+            onChanged: (c) => setState(() => _choice = c),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            height: 50,
+            child: FilledButton.icon(
+              onPressed: () => Navigator.of(context).pop(_choice),
+              icon: const Icon(Icons.check_rounded),
+              label: const Text('Save'),
+            ),
+          ),
         ],
       ),
     );

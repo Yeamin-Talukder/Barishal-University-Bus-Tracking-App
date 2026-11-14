@@ -11,4 +11,6 @@
     <color name="widget_live_soft">#2446D369</color>
     <color name="widget_chip">#232A34</color>
     <color name="widget_divider">#2E3640</color>
+    <!-- "Last bus today" and "No more buses today". -->
+    <color name="widget_warn">#F5B544</color>
 </resources>

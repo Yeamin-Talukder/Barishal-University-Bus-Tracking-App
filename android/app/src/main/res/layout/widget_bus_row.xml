@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- One later departure in the medium widget. -->
+<!-- One later departure in the medium widget: route, the bus's name, where
+     it goes, the time. Tapping it opens the route in the app. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/row_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:foreground="?android:attr/selectableItemBackground"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingTop="5dp"
@@ -17,10 +20,22 @@
 
     <TextView
         android:id="@+id/row_route"
-        android:layout_width="28dp"
+        android:layout_width="24dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="6dp"
         android:fontFamily="sans-serif-medium"
+        android:textColor="@color/widget_muted"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/row_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:maxWidth="150dp"
         android:textColor="@color/widget_text"
         android:textSize="12sp"
         android:textStyle="bold" />
@@ -29,10 +44,11 @@
         android:id="@+id/row_dest"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
         android:layout_weight="1"
         android:ellipsize="end"
         android:maxLines="1"
-        android:textColor="@color/widget_text"
+        android:textColor="@color/widget_muted"
         android:textSize="12sp" />
 
     <TextView

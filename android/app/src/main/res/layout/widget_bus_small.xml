@@ -1,54 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Home-screen widget, small: the next buses take turns, sliding up. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Home-screen widget, small: the next buses take turns, sliding up, each
+     led by the bus's name. A green dot in the corner while buses on these
+     routes are sharing their position. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg"
     android:clipToOutline="true"
-    android:orientation="vertical"
     android:padding="12dp">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:importantForAccessibility="no"
-            android:src="@drawable/ic_widget_bus" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:fontFamily="sans-serif-medium"
-            android:maxLines="1"
-            android:text="@string/widget_label"
-            android:textColor="@color/widget_muted"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <ImageView
-            android:id="@+id/live_pill"
-            android:layout_width="9dp"
-            android:layout_height="9dp"
-            android:contentDescription="Live buses"
-            android:src="@drawable/widget_dot"
-            android:tint="@color/widget_live"
-            android:visibility="gone" />
-    </LinearLayout>
 
     <ViewFlipper
         android:id="@+id/flipper"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="6dp"
-        android:layout_weight="1"
+        android:layout_height="match_parent"
         android:autoStart="true"
         android:flipInterval="5000"
         android:inAnimation="@anim/widget_flip_in"
@@ -57,10 +22,20 @@
     <TextView
         android:id="@+id/empty"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="match_parent"
         android:gravity="center"
         android:textColor="@color/widget_muted"
         android:textSize="12sp"
         android:visibility="gone" />
-</LinearLayout>
+
+    <ImageView
+        android:id="@+id/live_pill"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="5dp"
+        android:contentDescription="Buses live now"
+        android:src="@drawable/widget_dot"
+        android:tint="@color/widget_live"
+        android:visibility="gone" />
+</FrameLayout>

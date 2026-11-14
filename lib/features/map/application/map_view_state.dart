@@ -64,6 +64,8 @@ class RouteShownReversed extends Notifier<bool> {
   }
 
   void toggle() => state = !state;
+
+  void set(bool reversed) => state = reversed;
 }
 
 final routeShownReversedProvider = NotifierProvider<RouteShownReversed, bool>(

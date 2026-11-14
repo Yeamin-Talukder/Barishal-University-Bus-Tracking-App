@@ -20,34 +20,70 @@ import java.io.File
  * app installed outside a store must show. The result comes back to
  * [onNewIntent] and is passed to Dart as "installStatus".
  *
- * Also opens links in the browser for the About page ("openUrl").
+ * Also opens links in the browser for the About page ("openUrl"), and
+ * passes departures tapped on the home-screen widget to Dart.
  */
 class MainActivity : FlutterActivity() {
     private var channel: MethodChannel? = null
+    private var widgetChannel: MethodChannel? = null
+
+    /** A departure tapped on the widget that started the app, until Dart asks. */
+    private var tappedDeparture: Map<String, Any?>? = null
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        tappedDeparture = departureOf(intent)
+        super.onCreate(savedInstanceState)
+    }
+
+    private fun departureOf(intent: Intent?): Map<String, Any?>? {
+        if (intent?.action != BusWidgetProvider.ACTION_OPEN_DEPARTURE) return null
+        val route = intent.getStringExtra(BusWidgetProvider.EXTRA_ROUTE) ?: return null
+        return mapOf(
+            "route" to route,
+            "from" to intent.getStringExtra(BusWidgetProvider.EXTRA_FROM),
+            "minutes" to intent.getIntExtra(BusWidgetProvider.EXTRA_MINUTES, 0),
+        )
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         // The "Next bus" home-screen widget.
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "refresh" -> {
-                    BusWidgetProvider.refreshAll(this)
-                    result.success(null)
-                }
-                "count" -> result.success(BusWidgetProvider.count(this))
-                "pin" -> {
-                    val manager = android.appwidget.AppWidgetManager.getInstance(this)
-                    if (Build.VERSION.SDK_INT >= 26 && manager.isRequestPinAppWidgetSupported) {
-                        result.success(
-                            manager.requestPinAppWidget(
-                                android.content.ComponentName(this, BusWidgetProvider::class.java), null, null,
-                            ),
-                        )
-                    } else {
-                        result.success(false)
+        widgetChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_CHANNEL).also { ch ->
+            ch.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "refresh" -> {
+                        BusWidgetProvider.refreshAll(this)
+                        result.success(null)
                     }
+                    "placed" -> result.success(BusWidgetProvider.placed(this))
+                    "setChoice" -> {
+                        val id = call.argument<Int>("id")
+                        val choice = call.argument<String>("choice")
+                        if (id == null || choice == null || !BusWidgetProvider.isOurs(this, id)) {
+                            result.error("bad_args", "No such widget", null)
+                        } else {
+                            BusWidgetProvider.setChoice(this, id, choice)
+                            result.success(null)
+                        }
+                    }
+                    "takeTappedDeparture" -> {
+                        result.success(tappedDeparture)
+                        tappedDeparture = null
+                    }
+                    "pin" -> {
+                        val manager = android.appwidget.AppWidgetManager.getInstance(this)
+                        if (Build.VERSION.SDK_INT >= 26 && manager.isRequestPinAppWidgetSupported) {
+                            result.success(
+                                manager.requestPinAppWidget(
+                                    android.content.ComponentName(this, BusWidgetProvider::class.java), null, null,
+                                ),
+                            )
+                        } else {
+                            result.success(false)
+                        }
+                    }
+                    else -> result.notImplemented()
                 }
-                else -> result.notImplemented()
             }
         }
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).also { ch ->
@@ -149,6 +185,11 @@ class MainActivity : FlutterActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        departureOf(intent)?.let { departure ->
+            // The app was already open: a departure tapped on the widget.
+            widgetChannel?.invokeMethod("openDeparture", departure)
+            return
+        }
         if (intent.action != ACTION_INSTALL_STATUS) return
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
         if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
