@@ -32,11 +32,33 @@ android {
         versionName = flutter.versionName
     }
 
+    // Release signing. GitHub Actions (.github/workflows/android.yml) passes
+    // the key in ANDROID_KEYSTORE_PATH and friends. Without them (a build on
+    // a developer's machine) the debug key is used, as before.
+    //
+    // Every published release must be signed with the same key: Android
+    // refuses an update signed differently, and Google sign-in is tied to
+    // the key's SHA in Firebase. Early-access releases use the project
+    // owner's debug key.
+    val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+    if (!keystorePath.isNullOrBlank()) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "android"
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "androiddebugkey"
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: "android"
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (!keystorePath.isNullOrBlank()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
