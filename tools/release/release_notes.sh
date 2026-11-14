@@ -35,7 +35,7 @@ cat <<EOF
 | \`$arm64\` | Almost every Android phone from the last several years. **Choose this one.** |
 | \`$armv7\` | Older 32-bit phones, if the one above will not install. |
 
-Needs Android 7.0 or newer. If the app is already installed, it offers this update itself (Profile → App updates). Otherwise download the file on your phone, open it, allow *Install unknown apps* for your browser if asked, then tap **Install**.
+Needs Android 7.0 or newer. Download the file on your phone, open it, allow *Install unknown apps* for your browser if asked, then tap **Install**. From version 1.1.0 on, the app also offers new versions itself (Profile → App updates).
 
 ## Checksums (SHA-256)
 
